@@ -6,7 +6,7 @@ import lombok.Getter;
 import java.time.LocalDateTime;
 
 @Getter
-public class FundingUpdateRequestVo {
+public class UpdateFundingRequestVo {
     private String fundingUuid;
     private String productUuid;
     private Long fundingAmount;

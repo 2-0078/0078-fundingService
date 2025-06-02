@@ -3,10 +3,8 @@ package com.pieceofcake.fundingservice.vo.in;
 import com.pieceofcake.fundingservice.entity.FundingStatus;
 import lombok.Getter;
 
-import java.time.LocalDateTime;
-
 @Getter
-public class FundingCreateRequestVo {
+public class CreateFundingRequestVo {
     private String productUuid;
     private Long fundingAmount;
     private Long piecePrice;

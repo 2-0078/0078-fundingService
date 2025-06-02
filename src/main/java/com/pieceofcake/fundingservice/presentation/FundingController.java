@@ -1,14 +1,17 @@
 package com.pieceofcake.fundingservice.presentation;
 
+import com.pieceofcake.fundingservice.application.FundingParticipationService;
 import com.pieceofcake.fundingservice.application.FundingService;
 import com.pieceofcake.fundingservice.common.entity.BaseResponseEntity;
 import com.pieceofcake.fundingservice.common.entity.BaseResponseStatus;
-import com.pieceofcake.fundingservice.dto.in.FundingCreateRequestDto;
-import com.pieceofcake.fundingservice.dto.in.FundingUpdateRequestDto;
-import com.pieceofcake.fundingservice.dto.out.FundingResponseDto;
-import com.pieceofcake.fundingservice.vo.in.FundingCreateRequestVo;
-import com.pieceofcake.fundingservice.vo.in.FundingUpdateRequestVo;
-import com.pieceofcake.fundingservice.vo.out.FundingResponseVo;
+import com.pieceofcake.fundingservice.dto.in.CreateFundingRequestDto;
+import com.pieceofcake.fundingservice.dto.in.ParticipateFundingRequestDto;
+import com.pieceofcake.fundingservice.dto.in.UpdateFundingRequestDto;
+import com.pieceofcake.fundingservice.dto.out.GetFundingResponseDto;
+import com.pieceofcake.fundingservice.vo.in.CreateFundingRequestVo;
+import com.pieceofcake.fundingservice.vo.in.ParticipateFundingRequestVo;
+import com.pieceofcake.fundingservice.vo.in.UpdateFundingRequestVo;
+import com.pieceofcake.fundingservice.vo.out.GetFundingResponseVo;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -21,11 +24,13 @@ import java.util.List;
 public class FundingController {
 
     private final FundingService fundingService;
+    private final FundingParticipationService fundingParticipationService;
 
     @Operation(summary = "공모 리스트 조회")
     @GetMapping
-    public BaseResponseEntity<List<FundingResponseVo>> getFundingList(){
-        return new BaseResponseEntity<>(fundingService.getFundingList().stream().map(FundingResponseDto::toVo).toList());
+    public BaseResponseEntity<List<GetFundingResponseVo>> getFundingList(){
+//        return new BaseResponseEntity<>(fundingService.getFundingList().stream().map(GetFundingResponseDto::toVo).toList());
+        return null;
     }
 
     @Operation(summary = "공모 UUID 리스트 조회")
@@ -36,14 +41,14 @@ public class FundingController {
 
     @Operation(summary = "공모 상세 조회")
     @GetMapping("/{fundingUuid}")
-    public BaseResponseEntity<FundingResponseVo> getFunding(@PathVariable String fundingUuid){
+    public BaseResponseEntity<GetFundingResponseVo> getFunding(@PathVariable String fundingUuid){
         return new BaseResponseEntity<>(fundingService.getFunding(fundingUuid).toVo());
     }
 
     @Operation(summary = "공모 등록")
     @PostMapping
-    public BaseResponseEntity<Void> createFunding(@RequestBody FundingCreateRequestVo fundingCreateRequestVo){
-        fundingService.createFunding(FundingCreateRequestDto.from(fundingCreateRequestVo));
+    public BaseResponseEntity<Void> createFunding(@RequestBody CreateFundingRequestVo createFundingRequestVo){
+        fundingService.createFunding(CreateFundingRequestDto.from(createFundingRequestVo));
         return new BaseResponseEntity<>(BaseResponseStatus.SUCCESS);
     }
 
@@ -52,15 +57,15 @@ public class FundingController {
     * */
     @Operation(summary = "공모 수정")
     @PutMapping
-    public BaseResponseEntity<Void> updateFunding(@RequestBody FundingUpdateRequestVo fundingUpdateRequestVo){
-        fundingService.updateFunding(FundingUpdateRequestDto.from(fundingUpdateRequestVo));
+    public BaseResponseEntity<Void> updateFunding(@RequestBody UpdateFundingRequestVo updateFundingRequestVo){
+        fundingService.updateFunding(UpdateFundingRequestDto.from(updateFundingRequestVo));
         return new BaseResponseEntity<>(BaseResponseStatus.SUCCESS);
     }
 
     @Operation(summary = "공모 상태 변경")
     @PutMapping("/status")
-    public BaseResponseEntity<Void> updateFundingStatus(@RequestBody FundingUpdateRequestVo fundingUpdateRequestVo){
-        fundingService.updateFundingStatus(FundingUpdateRequestDto.from(fundingUpdateRequestVo));
+    public BaseResponseEntity<Void> updateFundingStatus(@RequestBody UpdateFundingRequestVo updateFundingRequestVo){
+        fundingService.updateFundingStatus(UpdateFundingRequestDto.from(updateFundingRequestVo));
         return new BaseResponseEntity<>(BaseResponseStatus.SUCCESS);
     }
 
@@ -68,6 +73,13 @@ public class FundingController {
     @DeleteMapping("/{fundingUuid}")
     public BaseResponseEntity<Void> deleteFunding(@PathVariable String fundingUuid){
         fundingService.deleteFunding(fundingUuid);
+        return new BaseResponseEntity<>(BaseResponseStatus.SUCCESS);
+    }
+
+    @Operation(summary = "(사용자)공모 참여")
+    @PostMapping("/join")
+    public BaseResponseEntity<Void> joinFunding(@RequestBody ParticipateFundingRequestVo fundingJoinRequestVo){
+        fundingParticipationService.joinFunding(ParticipateFundingRequestDto.from(fundingJoinRequestVo));
         return new BaseResponseEntity<>(BaseResponseStatus.SUCCESS);
     }
 }
