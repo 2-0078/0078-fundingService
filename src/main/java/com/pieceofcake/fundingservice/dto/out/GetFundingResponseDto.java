@@ -2,7 +2,7 @@ package com.pieceofcake.fundingservice.dto.out;
 
 import com.pieceofcake.fundingservice.entity.Funding;
 import com.pieceofcake.fundingservice.entity.FundingStatus;
-import com.pieceofcake.fundingservice.vo.out.FundingResponseVo;
+import com.pieceofcake.fundingservice.vo.out.GetFundingResponseVo;
 import lombok.*;
 
 @Getter
@@ -10,7 +10,7 @@ import lombok.*;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-public class FundingResponseDto {
+public class GetFundingResponseDto {
     private String fundingUuid;
     private String productUuid;
     private Long fundingAmount;
@@ -20,8 +20,8 @@ public class FundingResponseDto {
     private String fundingDeadline;
     private FundingStatus fundingStatus;
 
-    public static FundingResponseDto from(Funding funding){
-        return FundingResponseDto.builder()
+    public static GetFundingResponseDto from(Funding funding){
+        return GetFundingResponseDto.builder()
                 .fundingUuid(funding.getFundingUuid())
                 .productUuid(funding.getProductUuid())
                 .fundingAmount(funding.getFundingAmount())
@@ -33,8 +33,8 @@ public class FundingResponseDto {
                 .build();
     }
 
-    public FundingResponseVo toVo(){
-        return FundingResponseVo.builder()
+    public GetFundingResponseVo toVo(){
+        return GetFundingResponseVo.builder()
                 .fundingUuid(fundingUuid)
                 .productUuid(productUuid)
                 .fundingAmount(fundingAmount)

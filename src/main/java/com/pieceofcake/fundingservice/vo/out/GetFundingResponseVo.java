@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class FundingResponseVo {
+public class GetFundingResponseVo {
     private String fundingUuid;
     private String productUuid;
     private Long fundingAmount;
