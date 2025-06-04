@@ -54,7 +54,7 @@ public class CreateFundingRequestDto {
     }
 
     private static String createFundingUuid(){
-        return "F"+ UUID.randomUUID().toString().substring(0,8);
+        return UUID.randomUUID().toString().substring(0,32);
     }
 
     private static LocalDateTime createFundingDeadline(){

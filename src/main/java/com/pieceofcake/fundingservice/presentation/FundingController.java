@@ -12,6 +12,7 @@ import com.pieceofcake.fundingservice.vo.in.CreateFundingRequestVo;
 import com.pieceofcake.fundingservice.vo.in.ParticipateFundingRequestVo;
 import com.pieceofcake.fundingservice.vo.in.UpdateFundingRequestVo;
 import com.pieceofcake.fundingservice.vo.out.GetFundingResponseVo;
+import com.pieceofcake.fundingservice.vo.out.GetParticipateFundingResponseVo;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -89,6 +90,13 @@ public class FundingController {
         String memberUuid = "member1212";
         fundingService.cancelFunding(CancelParticipateFundingRequestDto.from(fundingUuid,memberUuid));
         return new BaseResponseEntity<>(BaseResponseStatus.SUCCESS);
+    }
+
+    @Operation(summary = "(내자산)공모 상품 참여 내역 조회")
+    @GetMapping("/participation/{fundingUuid}")
+    public BaseResponseEntity<GetParticipateFundingResponseVo> getFundingParticipate(@PathVariable String fundingUuid){
+        String memberUuid = "member1212";
+        return new BaseResponseEntity<>(fundingParticipationService.getMyFundingParticipations(fundingUuid,memberUuid).toVo());
     }
 
     @Operation(summary = "공모 잔여 조각 조회")

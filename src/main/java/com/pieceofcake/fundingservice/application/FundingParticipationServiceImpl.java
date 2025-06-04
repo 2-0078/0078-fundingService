@@ -1,17 +1,13 @@
 package com.pieceofcake.fundingservice.application;
 
-import com.pieceofcake.fundingservice.common.entity.BaseResponseStatus;
-import com.pieceofcake.fundingservice.common.exception.BaseException;
 import com.pieceofcake.fundingservice.dto.in.ParticipateFundingRequestDto;
 import com.pieceofcake.fundingservice.dto.out.GetParticipateFundingResponseDto;
+import com.pieceofcake.fundingservice.entity.FundingParticipation;
 import com.pieceofcake.fundingservice.entity.ParticipateStatus;
 import com.pieceofcake.fundingservice.infrastructure.FundingParticipationRepository;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -31,9 +27,18 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
     }
 
     @Override
-    public List<GetParticipateFundingResponseDto> getMyFundingParticipations(String fundingUuid, String memberUuid) {
-        return participationRepository.findByFundingUuidAndMemberUuid(fundingUuid,memberUuid)
-                .stream().map(GetParticipateFundingResponseDto::from).toList();
+    public GetParticipateFundingResponseDto getMyFundingParticipations(String fundingUuid, String memberUuid) {
+
+        int totalQuantity = participationRepository.findByFundingUuidAndMemberUuidAndParticipateStatus(fundingUuid, memberUuid,ParticipateStatus.JOIN)
+                .stream()
+                .mapToInt(FundingParticipation::getQuantity)
+                .sum();
+
+        return GetParticipateFundingResponseDto.builder()
+                .fundingUuid(fundingUuid)
+                .memberUuid(memberUuid)
+                .quantity(totalQuantity)
+                .build();
     }
 
     @Override
@@ -43,8 +48,10 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
 
     @Override
     public int getMyTotalParticipationQuantity(String fundingUuid, String memberUuid) {
-        return participationRepository.findMyTotalParticipationQuantity(fundingUuid, memberUuid)
-                .orElseThrow(()-> new BaseException(BaseResponseStatus.CANNOT_CANCEL_PARTICIPATION));
+        return participationRepository.findByFundingUuidAndMemberUuidAndParticipateStatus(fundingUuid, memberUuid,ParticipateStatus.JOIN)
+                .stream()
+                .mapToInt(FundingParticipation::getQuantity)
+                .sum();
     }
 
     @Override

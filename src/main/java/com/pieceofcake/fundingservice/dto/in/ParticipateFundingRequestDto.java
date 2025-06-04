@@ -38,6 +38,6 @@ public class ParticipateFundingRequestDto {
     }
 
     private String createParticipationUuid(){
-        return "P"+ UUID.randomUUID().toString().substring(0,8);
+        return UUID.randomUUID().toString().substring(0,32);
     }
 }
