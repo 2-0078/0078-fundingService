@@ -1,0 +1,16 @@
+version: "3.8"
+
+services:
+  board-service:
+    container_name: auth-service
+    image: ${DOCKER_USERNAME}/auth-service:latest
+    ports:
+      - "8084:8084"
+    env_file:
+      - .env
+    networks:
+      - backend
+
+networks:
+  backend:
+    external: true
