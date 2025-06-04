@@ -30,5 +30,5 @@ public class FundingParticipation extends BaseEntity {
     private Integer quantity;
 
     @Enumerated(EnumType.STRING)
-    private MemberStatus fundingStatus;
+    private ParticipateStatus participateStatus;
 }

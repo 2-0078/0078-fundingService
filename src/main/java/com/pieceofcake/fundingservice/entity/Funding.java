@@ -52,7 +52,9 @@ public class Funding extends BaseEntity {
         this.fundingStatus = fundingStatus;
     }
 
-    public void updateRemainingPieces(Integer quantity){this.remainingPieces -= quantity;}
+    public void increaseRemainingPieces(Integer quantity){this.remainingPieces += quantity;}
+
+    public void decreaseRemainingPieces(Integer quantity){this.remainingPieces -= quantity;}
 
     public void deleteFunding(){
         this.isDeleted = true;

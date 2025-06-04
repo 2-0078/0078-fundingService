@@ -4,10 +4,10 @@ import com.pieceofcake.fundingservice.application.FundingParticipationService;
 import com.pieceofcake.fundingservice.application.FundingService;
 import com.pieceofcake.fundingservice.common.entity.BaseResponseEntity;
 import com.pieceofcake.fundingservice.common.entity.BaseResponseStatus;
+import com.pieceofcake.fundingservice.dto.in.CancelParticipateFundingRequestDto;
 import com.pieceofcake.fundingservice.dto.in.CreateFundingRequestDto;
 import com.pieceofcake.fundingservice.dto.in.ParticipateFundingRequestDto;
 import com.pieceofcake.fundingservice.dto.in.UpdateFundingRequestDto;
-import com.pieceofcake.fundingservice.dto.out.GetFundingResponseDto;
 import com.pieceofcake.fundingservice.vo.in.CreateFundingRequestVo;
 import com.pieceofcake.fundingservice.vo.in.ParticipateFundingRequestVo;
 import com.pieceofcake.fundingservice.vo.in.UpdateFundingRequestVo;
@@ -77,15 +77,22 @@ public class FundingController {
     }
 
     @Operation(summary = "(사용자)공모 참여")
-    @PostMapping("/join")
-    public BaseResponseEntity<Void> joinFunding(@RequestBody ParticipateFundingRequestVo fundingJoinRequestVo){
-//        fundingParticipationService.joinFunding(ParticipateFundingRequestDto.from(fundingJoinRequestVo));
+    @PostMapping("/participation")
+    public BaseResponseEntity<Void> participateFunding(@RequestBody ParticipateFundingRequestVo fundingJoinRequestVo){
         fundingService.participateFunding(ParticipateFundingRequestDto.from(fundingJoinRequestVo));
         return new BaseResponseEntity<>(BaseResponseStatus.SUCCESS);
     }
 
+    @Operation(summary = "(사용자)공모 취소")
+    @DeleteMapping("/participation/{fundingUuid}")
+    public BaseResponseEntity<Void> cancelFunding(@PathVariable String fundingUuid){
+        String memberUuid = "member1212";
+        fundingService.cancelFunding(CancelParticipateFundingRequestDto.from(fundingUuid,memberUuid));
+        return new BaseResponseEntity<>(BaseResponseStatus.SUCCESS);
+    }
+
     @Operation(summary = "공모 잔여 조각 조회")
-    @GetMapping("/reamin/{fundingUuid}")
+    @GetMapping("/remain/{fundingUuid}")
     public BaseResponseEntity<Integer> getFundingRemainPieces(@PathVariable String fundingUuid){
         return new BaseResponseEntity<>(fundingService.getRemainingPieces(fundingUuid));
     }

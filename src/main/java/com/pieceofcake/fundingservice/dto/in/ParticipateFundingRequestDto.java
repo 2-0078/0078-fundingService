@@ -1,7 +1,7 @@
 package com.pieceofcake.fundingservice.dto.in;
 
 import com.pieceofcake.fundingservice.entity.FundingParticipation;
-import com.pieceofcake.fundingservice.entity.MemberStatus;
+import com.pieceofcake.fundingservice.entity.ParticipateStatus;
 import com.pieceofcake.fundingservice.vo.in.ParticipateFundingRequestVo;
 import lombok.*;
 
@@ -16,14 +16,14 @@ public class ParticipateFundingRequestDto {
     private String fundingUuid;
     private String memberUuid;
     private Integer quantity;
-    private MemberStatus fundingStatus;
+    private ParticipateStatus participateStatus;
 
     public static ParticipateFundingRequestDto from(ParticipateFundingRequestVo vo) {
         return ParticipateFundingRequestDto.builder()
                 .fundingUuid(vo.getFundingUuid())
                 .memberUuid(vo.getMemberUuid())
                 .quantity(vo.getQuantity())
-                .fundingStatus(MemberStatus.JOIN)
+                .participateStatus(ParticipateStatus.JOIN)
                 .build();
     }
 
@@ -33,7 +33,7 @@ public class ParticipateFundingRequestDto {
                 .fundingUuid(fundingUuid)
                 .memberUuid(memberUuid)
                 .quantity(quantity)
-                .fundingStatus(fundingStatus)
+                .participateStatus(participateStatus)
                 .build();
     }
 

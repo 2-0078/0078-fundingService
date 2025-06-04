@@ -1,6 +1,6 @@
 package com.pieceofcake.fundingservice.entity;
 
-public enum MemberStatus {
+public enum ParticipateStatus {
     JOIN,
     CANCEL
 }

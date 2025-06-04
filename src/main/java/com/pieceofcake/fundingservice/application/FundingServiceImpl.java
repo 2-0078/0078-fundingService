@@ -2,6 +2,7 @@ package com.pieceofcake.fundingservice.application;
 
 import com.pieceofcake.fundingservice.common.entity.BaseResponseStatus;
 import com.pieceofcake.fundingservice.common.exception.BaseException;
+import com.pieceofcake.fundingservice.dto.in.CancelParticipateFundingRequestDto;
 import com.pieceofcake.fundingservice.dto.in.CreateFundingRequestDto;
 import com.pieceofcake.fundingservice.dto.in.ParticipateFundingRequestDto;
 import com.pieceofcake.fundingservice.dto.in.UpdateFundingRequestDto;
@@ -97,15 +98,32 @@ public class FundingServiceImpl implements FundingService {
             throw new BaseException(BaseResponseStatus.NO_MORE_PIECES);
         }
 
-        //결제 이벤트
-        //조각 이벤트
+        //결제 서비스
+        //조각 서비스
         
         //수량 차감
-        funding.updateRemainingPieces(fundingJoinRequestDto.getQuantity());
+        funding.decreaseRemainingPieces(fundingJoinRequestDto.getQuantity());
         
         //참여내역 저장
         participationService.joinFunding(fundingJoinRequestDto);
 
+    }
+
+    @Override
+    @Transactional
+    public void cancelFunding(CancelParticipateFundingRequestDto cancelDto) {
+        //참여내역 총합 조회
+        int totalQuantity = participationService.getMyTotalParticipationQuantity(cancelDto.getFundingUuid(), cancelDto.getMemberUuid());
+        //공모 불러오기
+        Funding funding = fundingRepository.findByFundingUuidWithLock(cancelDto.getFundingUuid())
+                .orElseThrow(()-> new BaseException(BaseResponseStatus.NO_EXIST_FUNDING));
+        //남은 조각 증가
+        funding.increaseRemainingPieces(totalQuantity);
+        //참여내역 cancel
+        participationService.cancelParticipation(cancelDto.getFundingUuid(), cancelDto.getMemberUuid());
+
+        //결제 서비스 - 환불
+        //조각 서비스 - 조각 상태 변경
     }
 
     @Override
