@@ -1,5 +1,6 @@
 package com.pieceofcake.fundingservice.entity;
 
+import com.pieceofcake.fundingservice.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,7 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-public class FundingParticipation extends BaseEntity{
+public class FundingParticipation extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -25,5 +26,9 @@ public class FundingParticipation extends BaseEntity{
     @Column(nullable = false)
     private String memberUuid;
 
+    @Column(nullable = false)
+    private Integer quantity;
+
+    @Enumerated(EnumType.STRING)
     private MemberStatus fundingStatus;
 }

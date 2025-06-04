@@ -79,7 +79,14 @@ public class FundingController {
     @Operation(summary = "(사용자)공모 참여")
     @PostMapping("/join")
     public BaseResponseEntity<Void> joinFunding(@RequestBody ParticipateFundingRequestVo fundingJoinRequestVo){
-        fundingParticipationService.joinFunding(ParticipateFundingRequestDto.from(fundingJoinRequestVo));
+//        fundingParticipationService.joinFunding(ParticipateFundingRequestDto.from(fundingJoinRequestVo));
+        fundingService.participateFunding(ParticipateFundingRequestDto.from(fundingJoinRequestVo));
         return new BaseResponseEntity<>(BaseResponseStatus.SUCCESS);
+    }
+
+    @Operation(summary = "공모 잔여 조각 조회")
+    @GetMapping("/reamin/{fundingUuid}")
+    public BaseResponseEntity<Integer> getFundingRemainPieces(@PathVariable String fundingUuid){
+        return new BaseResponseEntity<>(fundingService.getRemainingPieces(fundingUuid));
     }
 }

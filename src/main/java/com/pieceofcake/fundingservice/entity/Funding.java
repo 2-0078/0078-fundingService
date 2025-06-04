@@ -1,5 +1,6 @@
 package com.pieceofcake.fundingservice.entity;
 
+import com.pieceofcake.fundingservice.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,7 +14,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-public class Funding extends BaseEntity{
+public class Funding extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -22,7 +23,7 @@ public class Funding extends BaseEntity{
     @Column(name = "funding_uuid", unique = true, nullable = false)
     private String fundingUuid;
 
-    @Column(name = "product_uuid", unique = true, nullable = false)
+    @Column(name = "product_uuid", nullable = false)
     private String productUuid;
 
     @Column(name = "funding_amount", nullable = false)
@@ -50,6 +51,8 @@ public class Funding extends BaseEntity{
     public void updateFundingStatus(FundingStatus fundingStatus){
         this.fundingStatus = fundingStatus;
     }
+
+    public void updateRemainingPieces(Integer quantity){this.remainingPieces -= quantity;}
 
     public void deleteFunding(){
         this.isDeleted = true;

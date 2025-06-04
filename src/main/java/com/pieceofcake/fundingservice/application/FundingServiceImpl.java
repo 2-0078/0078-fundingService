@@ -81,20 +81,30 @@ public class FundingServiceImpl implements FundingService {
         entity.deleteFunding();
     }
 
-    @Transactional
+
+    /*
+    * 남은 수량 조회, 0이면 throw 조각 없음 오류
+    * 남은 수량 - 주문수량(비관적락), 계산 결과가 0보다 작으면 남은 수량이 0이 될때까지의 값만 처리(일부만 조각 결제)
+    * 참여 내역 저장
+    * */
     @Override
+    @Transactional
     public void participateFunding(ParticipateFundingRequestDto fundingJoinRequestDto) {
-        //남은 수량 조회, 0이면 throw 조각 없음 오류
-        //남은 수량 - 주문수량(비관적락), 계산 결과가 0보다 작으면 남은 수량이 0이 될때까지의 값만 처리(일부만 조각 결제)
-        //참여 내역 저장
-
-
         //수량 조회
-        if(getRemainingPieces(fundingJoinRequestDto.getFundingUuid()) == 0){
+        Funding funding = fundingRepository.findByFundingUuidWithLock(fundingJoinRequestDto.getFundingUuid())
+                .orElseThrow(()-> new BaseException(BaseResponseStatus.NO_EXIST_FUNDING));
+        if(funding.getRemainingPieces() == 0){
             throw new BaseException(BaseResponseStatus.NO_MORE_PIECES);
         }
-        //수량 차감
 
+        //결제 이벤트
+        //조각 이벤트
+        
+        //수량 차감
+        funding.updateRemainingPieces(fundingJoinRequestDto.getQuantity());
+        
+        //참여내역 저장
+        participationService.joinFunding(fundingJoinRequestDto);
 
     }
 

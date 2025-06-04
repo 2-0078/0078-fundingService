@@ -3,15 +3,13 @@ package com.pieceofcake.fundingservice.dto.in;
 import com.pieceofcake.fundingservice.entity.FundingParticipation;
 import com.pieceofcake.fundingservice.entity.MemberStatus;
 import com.pieceofcake.fundingservice.vo.in.ParticipateFundingRequestVo;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.UUID;
 
 @Getter
 @Builder
+@ToString
 @NoArgsConstructor
 @AllArgsConstructor
 public class ParticipateFundingRequestDto {
@@ -34,6 +32,7 @@ public class ParticipateFundingRequestDto {
                 .participationUuid(createParticipationUuid())
                 .fundingUuid(fundingUuid)
                 .memberUuid(memberUuid)
+                .quantity(quantity)
                 .fundingStatus(fundingStatus)
                 .build();
     }
