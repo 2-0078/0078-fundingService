@@ -2,8 +2,8 @@ version: "3.8"
 
 services:
   board-service:
-    container_name: auth-service
-    image: ${DOCKER_USERNAME}/auth-service:latest
+    container_name: funding-service
+    image: ${DOCKER_USERNAME}/funding-service:latest
     ports:
       - "8084:8084"
     env_file:
