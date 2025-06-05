@@ -2,14 +2,13 @@ package com.pieceofcake.fundingservice.application;
 
 import com.pieceofcake.fundingservice.common.entity.BaseResponseStatus;
 import com.pieceofcake.fundingservice.common.exception.BaseException;
-import com.pieceofcake.fundingservice.dto.in.CancelParticipateFundingRequestDto;
-import com.pieceofcake.fundingservice.dto.in.CreateFundingRequestDto;
-import com.pieceofcake.fundingservice.dto.in.ParticipateFundingRequestDto;
-import com.pieceofcake.fundingservice.dto.in.UpdateFundingRequestDto;
+import com.pieceofcake.fundingservice.dto.in.*;
 import com.pieceofcake.fundingservice.dto.out.GetFundingResponseDto;
+import com.pieceofcake.fundingservice.dto.out.GetWishFundingResponseDto;
 import com.pieceofcake.fundingservice.entity.Funding;
 import com.pieceofcake.fundingservice.entity.FundingStatus;
 import com.pieceofcake.fundingservice.infrastructure.FundingRepository;
+import com.pieceofcake.fundingservice.infrastructure.WishFundingRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,6 +21,7 @@ import java.util.List;
 public class FundingServiceImpl implements FundingService {
 
     private final FundingRepository fundingRepository;
+    private final WishFundingRepository wishFundingRepository;
     private final FundingParticipationService participationService;
 
     /*
@@ -133,4 +133,23 @@ public class FundingServiceImpl implements FundingService {
         ).getRemainingPieces();
     }
 
+    @Override
+    public List<GetWishFundingResponseDto> getWishFundingList(String memberUuid) {
+        return wishFundingRepository.getByMemberUuid(memberUuid).stream().map(GetWishFundingResponseDto::from).toList();
+    }
+
+    @Override
+    public Boolean isWishFunding(String fundingUuid, String memberUuid) {
+        return wishFundingRepository.existsByMemberUuidAndFundingUuid(memberUuid,fundingUuid);
+    }
+
+    @Override
+    public void wishFunding(CreateWishFundingRequestDto createWishFundingRequestDto) {
+        wishFundingRepository.save(createWishFundingRequestDto.toEntity());
+    }
+
+    @Override
+    public void cancelWishFunding(Long id) {
+        wishFundingRepository.deleteById(id);
+    }
 }

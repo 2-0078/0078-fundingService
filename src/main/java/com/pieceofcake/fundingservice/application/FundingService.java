@@ -1,10 +1,8 @@
 package com.pieceofcake.fundingservice.application;
 
-import com.pieceofcake.fundingservice.dto.in.CancelParticipateFundingRequestDto;
-import com.pieceofcake.fundingservice.dto.in.CreateFundingRequestDto;
-import com.pieceofcake.fundingservice.dto.in.ParticipateFundingRequestDto;
-import com.pieceofcake.fundingservice.dto.in.UpdateFundingRequestDto;
+import com.pieceofcake.fundingservice.dto.in.*;
 import com.pieceofcake.fundingservice.dto.out.GetFundingResponseDto;
+import com.pieceofcake.fundingservice.dto.out.GetWishFundingResponseDto;
 
 import java.util.List;
 
@@ -19,4 +17,8 @@ public interface FundingService {
     void participateFunding(ParticipateFundingRequestDto fundingJoinRequestDto);
     void cancelFunding(CancelParticipateFundingRequestDto cancelDto);
     int getRemainingPieces(String fundingUuid);
+    List<GetWishFundingResponseDto> getWishFundingList(String memberUuid);
+    Boolean isWishFunding(String fundingUuid, String memberUuid);
+    void wishFunding(CreateWishFundingRequestDto createWishFundingRequestDto);
+    void cancelWishFunding(Long id);
 }
