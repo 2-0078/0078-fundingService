@@ -1,14 +1,19 @@
 package com.pieceofcake.fundingservice.presentation;
 
+import com.pieceofcake.fundingservice.application.FundingParticipationService;
 import com.pieceofcake.fundingservice.application.FundingService;
 import com.pieceofcake.fundingservice.common.entity.BaseResponseEntity;
 import com.pieceofcake.fundingservice.common.entity.BaseResponseStatus;
-import com.pieceofcake.fundingservice.dto.in.FundingCreateRequestDto;
-import com.pieceofcake.fundingservice.dto.in.FundingUpdateRequestDto;
-import com.pieceofcake.fundingservice.dto.out.FundingResponseDto;
-import com.pieceofcake.fundingservice.vo.in.FundingCreateRequestVo;
-import com.pieceofcake.fundingservice.vo.in.FundingUpdateRequestVo;
-import com.pieceofcake.fundingservice.vo.out.FundingResponseVo;
+import com.pieceofcake.fundingservice.dto.in.*;
+import com.pieceofcake.fundingservice.dto.out.GetFundingResponseDto;
+import com.pieceofcake.fundingservice.dto.out.GetWishFundingResponseDto;
+import com.pieceofcake.fundingservice.vo.in.CreateFundingRequestVo;
+import com.pieceofcake.fundingservice.vo.in.CreateWishFundingRequestVo;
+import com.pieceofcake.fundingservice.vo.in.ParticipateFundingRequestVo;
+import com.pieceofcake.fundingservice.vo.in.UpdateFundingRequestVo;
+import com.pieceofcake.fundingservice.vo.out.GetFundingResponseVo;
+import com.pieceofcake.fundingservice.vo.out.GetParticipateFundingResponseVo;
+import com.pieceofcake.fundingservice.vo.out.GetWishFundingResponseVo;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -21,11 +26,13 @@ import java.util.List;
 public class FundingController {
 
     private final FundingService fundingService;
+    private final FundingParticipationService fundingParticipationService;
 
     @Operation(summary = "공모 리스트 조회")
     @GetMapping
-    public BaseResponseEntity<List<FundingResponseVo>> getFundingList(){
-        return new BaseResponseEntity<>(fundingService.getFundingList().stream().map(FundingResponseDto::toVo).toList());
+    public BaseResponseEntity<List<GetFundingResponseVo>> getFundingList(){
+//        return new BaseResponseEntity<>(fundingService.getFundingList().stream().map(GetFundingResponseDto::toVo).toList());
+        return null;
     }
 
     @Operation(summary = "공모 UUID 리스트 조회")
@@ -36,14 +43,14 @@ public class FundingController {
 
     @Operation(summary = "공모 상세 조회")
     @GetMapping("/{fundingUuid}")
-    public BaseResponseEntity<FundingResponseVo> getFunding(@PathVariable String fundingUuid){
+    public BaseResponseEntity<GetFundingResponseVo> getFunding(@PathVariable String fundingUuid){
         return new BaseResponseEntity<>(fundingService.getFunding(fundingUuid).toVo());
     }
 
     @Operation(summary = "공모 등록")
     @PostMapping
-    public BaseResponseEntity<Void> createFunding(@RequestBody FundingCreateRequestVo fundingCreateRequestVo){
-        fundingService.createFunding(FundingCreateRequestDto.from(fundingCreateRequestVo));
+    public BaseResponseEntity<Void> createFunding(@RequestBody CreateFundingRequestVo createFundingRequestVo){
+        fundingService.createFunding(CreateFundingRequestDto.from(createFundingRequestVo));
         return new BaseResponseEntity<>(BaseResponseStatus.SUCCESS);
     }
 
@@ -52,15 +59,15 @@ public class FundingController {
     * */
     @Operation(summary = "공모 수정")
     @PutMapping
-    public BaseResponseEntity<Void> updateFunding(@RequestBody FundingUpdateRequestVo fundingUpdateRequestVo){
-        fundingService.updateFunding(FundingUpdateRequestDto.from(fundingUpdateRequestVo));
+    public BaseResponseEntity<Void> updateFunding(@RequestBody UpdateFundingRequestVo updateFundingRequestVo){
+        fundingService.updateFunding(UpdateFundingRequestDto.from(updateFundingRequestVo));
         return new BaseResponseEntity<>(BaseResponseStatus.SUCCESS);
     }
 
     @Operation(summary = "공모 상태 변경")
     @PutMapping("/status")
-    public BaseResponseEntity<Void> updateFundingStatus(@RequestBody FundingUpdateRequestVo fundingUpdateRequestVo){
-        fundingService.updateFundingStatus(FundingUpdateRequestDto.from(fundingUpdateRequestVo));
+    public BaseResponseEntity<Void> updateFundingStatus(@RequestBody UpdateFundingRequestVo updateFundingRequestVo){
+        fundingService.updateFundingStatus(UpdateFundingRequestDto.from(updateFundingRequestVo));
         return new BaseResponseEntity<>(BaseResponseStatus.SUCCESS);
     }
 
@@ -68,6 +75,63 @@ public class FundingController {
     @DeleteMapping("/{fundingUuid}")
     public BaseResponseEntity<Void> deleteFunding(@PathVariable String fundingUuid){
         fundingService.deleteFunding(fundingUuid);
+        return new BaseResponseEntity<>(BaseResponseStatus.SUCCESS);
+    }
+
+    @Operation(summary = "(사용자)공모 참여")
+    @PostMapping("/participation")
+    public BaseResponseEntity<Void> participateFunding(@RequestBody ParticipateFundingRequestVo fundingJoinRequestVo){
+        fundingService.participateFunding(ParticipateFundingRequestDto.from(fundingJoinRequestVo));
+        return new BaseResponseEntity<>(BaseResponseStatus.SUCCESS);
+    }
+
+    @Operation(summary = "(사용자)공모 취소")
+    @DeleteMapping("/participation/{fundingUuid}")
+    public BaseResponseEntity<Void> cancelFunding(@PathVariable String fundingUuid){
+        String memberUuid = "member1212";
+        fundingService.cancelFunding(CancelParticipateFundingRequestDto.from(fundingUuid,memberUuid));
+        return new BaseResponseEntity<>(BaseResponseStatus.SUCCESS);
+    }
+
+    @Operation(summary = "(내자산)공모 상품 참여 내역 조회")
+    @GetMapping("/participation/{fundingUuid}")
+    public BaseResponseEntity<GetParticipateFundingResponseVo> getFundingParticipate(@PathVariable String fundingUuid){
+        String memberUuid = "member1212";
+        return new BaseResponseEntity<>(fundingParticipationService.getMyFundingParticipations(fundingUuid,memberUuid).toVo());
+    }
+
+    @Operation(summary = "공모 잔여 조각 조회")
+    @GetMapping("/remain/{fundingUuid}")
+    public BaseResponseEntity<Integer> getFundingRemainPieces(@PathVariable String fundingUuid){
+        return new BaseResponseEntity<>(fundingService.getRemainingPieces(fundingUuid));
+    }
+
+    @Operation(summary = "찜한 공모 전체 조회")
+    @GetMapping("/wish")
+    public BaseResponseEntity<List<GetWishFundingResponseVo>> getWishFunding(){
+        String memberUuid = "member1212";
+        return new BaseResponseEntity<>(fundingService.getWishFundingList(memberUuid).stream().map(GetWishFundingResponseDto::toVo).toList());
+    }
+
+    @Operation(summary = "공모 상품 찜 여부 조회")
+    @GetMapping("/wish/{fundingUuid}")
+    public BaseResponseEntity<Boolean> isWishFunding(@PathVariable String fundingUuid){
+        String memberUuid = "member1212";
+        return new BaseResponseEntity<>(fundingService.isWishFunding(fundingUuid, memberUuid));
+    }
+
+    @Operation(summary = "공모 찜하기")
+    @PostMapping("/wish")
+    public BaseResponseEntity<Void> wishFunding(@RequestBody CreateWishFundingRequestVo createWishFundingRequestVo){
+        String memberUuid = "member1212";
+        fundingService.wishFunding(CreateWishFundingRequestDto.from(createWishFundingRequestVo, memberUuid));
+        return new BaseResponseEntity<>(BaseResponseStatus.SUCCESS);
+    }
+
+    @Operation(summary = "공모 찜 취소하기")
+    @DeleteMapping("/wish/{id}")
+    public BaseResponseEntity<Void> cancelWishFunding(@PathVariable Long id){
+        fundingService.cancelWishFunding(id);
         return new BaseResponseEntity<>(BaseResponseStatus.SUCCESS);
     }
 }

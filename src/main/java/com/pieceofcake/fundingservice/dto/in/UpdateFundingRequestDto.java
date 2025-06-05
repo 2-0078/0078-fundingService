@@ -2,22 +2,19 @@ package com.pieceofcake.fundingservice.dto.in;
 
 import com.pieceofcake.fundingservice.entity.Funding;
 import com.pieceofcake.fundingservice.entity.FundingStatus;
-import com.pieceofcake.fundingservice.vo.in.FundingCreateRequestVo;
-import com.pieceofcake.fundingservice.vo.in.FundingUpdateRequestVo;
+import com.pieceofcake.fundingservice.vo.in.UpdateFundingRequestVo;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import java.time.LocalDateTime;
-
 @Slf4j
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class FundingUpdateRequestDto {
+public class UpdateFundingRequestDto {
     private String fundingUuid;
 //    private String productUuid;
     private Long fundingAmount;
@@ -27,15 +24,15 @@ public class FundingUpdateRequestDto {
 //    private LocalDateTime fundingDeadline;
     private FundingStatus fundingStatus;
 
-    public static FundingUpdateRequestDto from(FundingUpdateRequestVo fundingUpdateRequestVo) {
-        return FundingUpdateRequestDto.builder()
-                .fundingUuid(fundingUpdateRequestVo.getFundingUuid())
+    public static UpdateFundingRequestDto from(UpdateFundingRequestVo updateFundingRequestVo) {
+        return UpdateFundingRequestDto.builder()
+                .fundingUuid(updateFundingRequestVo.getFundingUuid())
 //                .productUuid(fundingUpdateRequestVo.getProductUuid())
-                .fundingAmount(fundingUpdateRequestVo.getFundingAmount())
-                .piecePrice(fundingUpdateRequestVo.getPiecePrice())
-                .totalPieces(fundingUpdateRequestVo.getTotalPieces())
+                .fundingAmount(updateFundingRequestVo.getFundingAmount())
+                .piecePrice(updateFundingRequestVo.getPiecePrice())
+                .totalPieces(updateFundingRequestVo.getTotalPieces())
 //                .remainingPieces(fundingUpdateRequestVo.getTotalPieces())
-                .fundingStatus(fundingUpdateRequestVo.getFundingStatus())
+                .fundingStatus(updateFundingRequestVo.getFundingStatus())
                 .build();
     }
 

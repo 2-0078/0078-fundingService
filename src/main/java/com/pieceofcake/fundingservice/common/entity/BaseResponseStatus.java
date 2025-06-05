@@ -37,9 +37,14 @@ public enum BaseResponseStatus {
      * 2000: funding service error
      */
     NO_EXIST_FUNDING(HttpStatus.NOT_FOUND, false, 2001, "공모 상품이 존재하지 않습니다."),
-    FAILED_TO_UPDATE(HttpStatus.INTERNAL_SERVER_ERROR, false, 2002, "수정에 실패했습니다.");
-
-
+    FAILED_TO_UPDATE(HttpStatus.INTERNAL_SERVER_ERROR, false, 2002, "수정에 실패했습니다."),
+    FAIL_TO_JOIN(HttpStatus.INTERNAL_SERVER_ERROR, false, 2003, "공모 참여에 실패했습니다."),
+    NO_MORE_PIECES(HttpStatus.INTERNAL_SERVER_ERROR, false, 2004, "잔여 조각이 없습니다."),
+    NO_PARTICIPATED(HttpStatus.INTERNAL_SERVER_ERROR, false, 2005, "잔여 조각이 없습니다."),
+    FUNDING_ALREADY_CLOSED(HttpStatus.BAD_REQUEST, false, 2006, "공모 참여가 마감되었습니다."),
+    CANNOT_CANCEL_PARTICIPATION(HttpStatus.BAD_REQUEST, false, 2007, "공모 취소가 불가능한 상태입니다."),
+    UNAUTHORIZED_PARTICIPATION(HttpStatus.UNAUTHORIZED, false, 2008, "공모에 참여할 권한이 없습니다."),
+    INVALID_FUNDING_STATUS(HttpStatus.BAD_REQUEST, false, 2009, "공모 상태가 유효하지 않습니다.");
 
 
 

@@ -2,7 +2,7 @@ package com.pieceofcake.fundingservice.dto.in;
 
 import com.pieceofcake.fundingservice.entity.Funding;
 import com.pieceofcake.fundingservice.entity.FundingStatus;
-import com.pieceofcake.fundingservice.vo.in.FundingCreateRequestVo;
+import com.pieceofcake.fundingservice.vo.in.CreateFundingRequestVo;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -17,7 +17,7 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class FundingCreateRequestDto {
+public class CreateFundingRequestDto {
     private String fundingUuid;
     private String productUuid;
     private Long fundingAmount;
@@ -27,16 +27,16 @@ public class FundingCreateRequestDto {
     private LocalDateTime fundingDeadline;
     private FundingStatus fundingStatus;
 
-    public static FundingCreateRequestDto from(FundingCreateRequestVo fundingCreateRequestVo) {
-        return FundingCreateRequestDto.builder()
+    public static CreateFundingRequestDto from(CreateFundingRequestVo createFundingRequestVo) {
+        return CreateFundingRequestDto.builder()
                 .fundingUuid(createFundingUuid())
-                .productUuid(fundingCreateRequestVo.getProductUuid())
-                .fundingAmount(fundingCreateRequestVo.getFundingAmount())
-                .piecePrice(fundingCreateRequestVo.getPiecePrice())
-                .totalPieces(fundingCreateRequestVo.getTotalPieces())
-                .remainingPieces(fundingCreateRequestVo.getTotalPieces())
+                .productUuid(createFundingRequestVo.getProductUuid())
+                .fundingAmount(createFundingRequestVo.getFundingAmount())
+                .piecePrice(createFundingRequestVo.getPiecePrice())
+                .totalPieces(createFundingRequestVo.getTotalPieces())
+                .remainingPieces(createFundingRequestVo.getTotalPieces())
                 .fundingDeadline(createFundingDeadline())
-                .fundingStatus(fundingCreateRequestVo.getFundingStatus())
+                .fundingStatus(createFundingRequestVo.getFundingStatus())
                 .build();
     }
 
@@ -54,7 +54,7 @@ public class FundingCreateRequestDto {
     }
 
     private static String createFundingUuid(){
-        return "F"+ UUID.randomUUID().toString().substring(0,5);
+        return UUID.randomUUID().toString().substring(0,32);
     }
 
     private static LocalDateTime createFundingDeadline(){

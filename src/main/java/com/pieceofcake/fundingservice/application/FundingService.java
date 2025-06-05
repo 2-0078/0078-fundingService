@@ -1,19 +1,24 @@
 package com.pieceofcake.fundingservice.application;
 
-import com.pieceofcake.fundingservice.dto.in.FundingCreateRequestDto;
-import com.pieceofcake.fundingservice.dto.in.FundingUpdateRequestDto;
-import com.pieceofcake.fundingservice.dto.out.FundingResponseDto;
-import com.pieceofcake.fundingservice.entity.Funding;
+import com.pieceofcake.fundingservice.dto.in.*;
+import com.pieceofcake.fundingservice.dto.out.GetFundingResponseDto;
+import com.pieceofcake.fundingservice.dto.out.GetWishFundingResponseDto;
 
 import java.util.List;
 
 public interface FundingService {
     //admin
-    List<FundingResponseDto> getFundingList();
     List<String> getFundingUuidList();
-    FundingResponseDto getFunding(String fundingUuid);
-    void createFunding(FundingCreateRequestDto fundingCreateRequestDto);
-    void updateFunding(FundingUpdateRequestDto fundingUpdateRequestDto);
-    void updateFundingStatus(FundingUpdateRequestDto fundingUpdateRequestDto);
+    GetFundingResponseDto getFunding(String fundingUuid);
+    void createFunding(CreateFundingRequestDto createFundingRequestDto);
+    void updateFunding(UpdateFundingRequestDto updateFundingRequestDto);
+    void updateFundingStatus(UpdateFundingRequestDto updateFundingRequestDto);
     void deleteFunding(String fundingUuid);
+    void participateFunding(ParticipateFundingRequestDto fundingJoinRequestDto);
+    void cancelFunding(CancelParticipateFundingRequestDto cancelDto);
+    int getRemainingPieces(String fundingUuid);
+    List<GetWishFundingResponseDto> getWishFundingList(String memberUuid);
+    Boolean isWishFunding(String fundingUuid, String memberUuid);
+    void wishFunding(CreateWishFundingRequestDto createWishFundingRequestDto);
+    void cancelWishFunding(Long id);
 }
