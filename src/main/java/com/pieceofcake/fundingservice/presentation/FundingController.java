@@ -4,15 +4,16 @@ import com.pieceofcake.fundingservice.application.FundingParticipationService;
 import com.pieceofcake.fundingservice.application.FundingService;
 import com.pieceofcake.fundingservice.common.entity.BaseResponseEntity;
 import com.pieceofcake.fundingservice.common.entity.BaseResponseStatus;
-import com.pieceofcake.fundingservice.dto.in.CancelParticipateFundingRequestDto;
-import com.pieceofcake.fundingservice.dto.in.CreateFundingRequestDto;
-import com.pieceofcake.fundingservice.dto.in.ParticipateFundingRequestDto;
-import com.pieceofcake.fundingservice.dto.in.UpdateFundingRequestDto;
+import com.pieceofcake.fundingservice.dto.in.*;
+import com.pieceofcake.fundingservice.dto.out.GetFundingResponseDto;
+import com.pieceofcake.fundingservice.dto.out.GetWishFundingResponseDto;
 import com.pieceofcake.fundingservice.vo.in.CreateFundingRequestVo;
+import com.pieceofcake.fundingservice.vo.in.CreateWishFundingRequestVo;
 import com.pieceofcake.fundingservice.vo.in.ParticipateFundingRequestVo;
 import com.pieceofcake.fundingservice.vo.in.UpdateFundingRequestVo;
 import com.pieceofcake.fundingservice.vo.out.GetFundingResponseVo;
 import com.pieceofcake.fundingservice.vo.out.GetParticipateFundingResponseVo;
+import com.pieceofcake.fundingservice.vo.out.GetWishFundingResponseVo;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -103,5 +104,34 @@ public class FundingController {
     @GetMapping("/remain/{fundingUuid}")
     public BaseResponseEntity<Integer> getFundingRemainPieces(@PathVariable String fundingUuid){
         return new BaseResponseEntity<>(fundingService.getRemainingPieces(fundingUuid));
+    }
+
+    @Operation(summary = "찜한 공모 전체 조회")
+    @GetMapping("/wish")
+    public BaseResponseEntity<List<GetWishFundingResponseVo>> getWishFunding(){
+        String memberUuid = "member1212";
+        return new BaseResponseEntity<>(fundingService.getWishFundingList(memberUuid).stream().map(GetWishFundingResponseDto::toVo).toList());
+    }
+
+    @Operation(summary = "공모 상품 찜 여부 조회")
+    @GetMapping("/wish/{fundingUuid}")
+    public BaseResponseEntity<Boolean> isWishFunding(@PathVariable String fundingUuid){
+        String memberUuid = "member1212";
+        return new BaseResponseEntity<>(fundingService.isWishFunding(fundingUuid, memberUuid));
+    }
+
+    @Operation(summary = "공모 찜하기")
+    @PostMapping("/wish")
+    public BaseResponseEntity<Void> wishFunding(@RequestBody CreateWishFundingRequestVo createWishFundingRequestVo){
+        String memberUuid = "member1212";
+        fundingService.wishFunding(CreateWishFundingRequestDto.from(createWishFundingRequestVo, memberUuid));
+        return new BaseResponseEntity<>(BaseResponseStatus.SUCCESS);
+    }
+
+    @Operation(summary = "공모 찜 취소하기")
+    @DeleteMapping("/wish/{id}")
+    public BaseResponseEntity<Void> cancelWishFunding(@PathVariable Long id){
+        fundingService.cancelWishFunding(id);
+        return new BaseResponseEntity<>(BaseResponseStatus.SUCCESS);
     }
 }
