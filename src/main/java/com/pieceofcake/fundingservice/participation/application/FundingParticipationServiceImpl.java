@@ -31,12 +31,13 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
     @Transactional
     public void participateFunding(ParticipateFundingRequestDto fundingJoinRequestDto) {
         //레디스에서 처리한 조각 수
-        if(redisService.decreaseRemainPieces(
-                fundingJoinRequestDto.getFundingUuid(), fundingJoinRequestDto.getQuantity()) == 0){
+        long quantity = redisService.decreaseRemainPieces(
+                fundingJoinRequestDto.getFundingUuid(), fundingJoinRequestDto.getQuantity());
+        if(quantity == 0){
             throw new BaseException((BaseResponseStatus.NO_MORE_PIECES));
         }
         try {
-            participationRepository.save(fundingJoinRequestDto.toEntity());
+            participationRepository.save(fundingJoinRequestDto.toEntity((int)quantity));
             //결제
             paymentClient.paymentPieces(CreatePaymentRequestDto.builder()
                             .fundingUuid(fundingJoinRequestDto.getFundingUuid())
