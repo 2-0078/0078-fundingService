@@ -59,6 +59,12 @@ public class RedisServiceImpl implements RedisService {
     }
 
     @Override
+    public void deleteRemainingPieces(String fundingUuid) {
+        String keyPrefix = "funding:" + fundingUuid;
+        redisTemplate.delete(keyPrefix + ":remain");
+    }
+
+    @Override
     public Long decreaseRemainPieces(String fundingUuid, int quantity) {
         try {
             String script = new String(Files.readAllBytes(Paths.get("src/main/resources/scripts/join.lua")));

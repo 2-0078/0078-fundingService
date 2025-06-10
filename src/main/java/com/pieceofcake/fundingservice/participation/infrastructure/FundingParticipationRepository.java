@@ -12,5 +12,12 @@ import java.util.List;
 public interface FundingParticipationRepository extends JpaRepository<FundingParticipation, Long> {
     //공모 상품의 참여 내역 전체 조회
     List<FundingParticipation> findByFundingUuidAndMemberUuidAndParticipateStatus(String fundingUuid, String memberUuid, ParticipateStatus participateStatus);
+    @Query("SELECT " +
+            "SUM(CASE WHEN f.participateStatus = 'JOIN' THEN 1 ELSE 0 END) - " +
+            "SUM(CASE WHEN f.participateStatus = 'CANCEL' THEN 1 ELSE 0 END) " +
+            "FROM FundingParticipation f " +
+            "WHERE f.fundingUuid = :fundingUuid AND f.memberUuid = :memberUuid")
+    int getJoinMinusCancelCount(@Param("fundingUuid") String fundingUuid, @Param("memberUuid") String memberUuid);
+
 
 }
