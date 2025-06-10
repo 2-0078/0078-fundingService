@@ -7,6 +7,8 @@ import com.pieceofcake.fundingservice.funding.dto.out.GetFundingResponseDto;
 import com.pieceofcake.fundingservice.funding.dto.out.GetWishFundingResponseDto;
 import com.pieceofcake.fundingservice.funding.entity.Funding;
 import com.pieceofcake.fundingservice.funding.entity.FundingStatus;
+import com.pieceofcake.fundingservice.funding.infrastructure.client.PieceClient;
+import com.pieceofcake.fundingservice.funding.infrastructure.client.dto.CreatePieceRequestDto;
 import com.pieceofcake.fundingservice.funding.infrastructure.repository.FundingRepository;
 import com.pieceofcake.fundingservice.funding.infrastructure.repository.WishFundingRepository;
 import com.pieceofcake.fundingservice.participation.application.RedisService;
@@ -24,6 +26,7 @@ public class FundingServiceImpl implements FundingService {
     private final FundingRepository fundingRepository;
     private final WishFundingRepository wishFundingRepository;
     private final RedisService redisService;
+    private final PieceClient pieceClient;
 
     /*
     * 상품명, 카테고리, (최신/가격/남은조각 수) 정렬
@@ -40,16 +43,27 @@ public class FundingServiceImpl implements FundingService {
     }
 
     @Override
+    @Transactional
     public void createFunding(CreateFundingRequestDto createFundingRequestDto) {
-        redisService.setRemainingPieces(
-                SetRedisFundingRequestDto.builder()
-                        .fundingUuid(createFundingRequestDto.getFundingUuid())
-                        .totalPieces(createFundingRequestDto.getTotalPieces())
-                        .remainingPieces(createFundingRequestDto.getRemainingPieces())
-                        .piecePrice(createFundingRequestDto.getPiecePrice())
-                        .build()
-        );
-        fundingRepository.save(createFundingRequestDto.toEntity());
+
+        try {
+            redisService.setRemainingPieces(
+                    SetRedisFundingRequestDto.builder()
+                            .fundingUuid(createFundingRequestDto.getFundingUuid())
+                            .totalPieces(createFundingRequestDto.getTotalPieces())
+                            .remainingPieces(createFundingRequestDto.getRemainingPieces())
+                            .piecePrice(createFundingRequestDto.getPiecePrice())
+                            .build()
+            );
+            fundingRepository.save(createFundingRequestDto.toEntity());
+            pieceClient.createPiece(CreatePieceRequestDto.builder()
+                    .productUuid(createFundingRequestDto.getProductUuid())
+                    .totalQuantity(createFundingRequestDto.getTotalPieces())
+                    .build());
+
+        }catch (Exception e){
+            throw new BaseException(BaseResponseStatus.INTERNAL_SERVER_ERROR,e);
+        }
     }
 
     @Override

@@ -8,6 +8,8 @@ import com.pieceofcake.fundingservice.participation.dto.out.GetParticipateFundin
 import com.pieceofcake.fundingservice.participation.entity.ParticipateStatus;
 import com.pieceofcake.fundingservice.participation.infrastructure.FundingParticipationRepository;
 import com.pieceofcake.fundingservice.participation.entity.FundingParticipation;
+import com.pieceofcake.fundingservice.participation.infrastructure.client.PaymentClient;
+import com.pieceofcake.fundingservice.participation.infrastructure.client.dto.CreatePaymentRequestDto;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +25,7 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
 
     private final FundingParticipationRepository participationRepository;
     private final RedisService redisService;
+    private final PaymentClient paymentClient;
 
     @Override
     @Transactional
@@ -35,7 +38,13 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
         try {
             participationRepository.save(fundingJoinRequestDto.toEntity());
             //결제
-//            getPiecePrice(fundingJoinRequestDto.getFundingUuid()) * fundingJoinRequestDto.getQuantity();
+            paymentClient.paymentPieces(CreatePaymentRequestDto.builder()
+                            .fundingUuid(fundingJoinRequestDto.getFundingUuid())
+                            .memberUuid(fundingJoinRequestDto.getMemberUuid())
+                            .totalPrice(getPiecePrice(fundingJoinRequestDto.getFundingUuid()) * fundingJoinRequestDto.getQuantity())
+                            .status(fundingJoinRequestDto.getParticipateStatus().toString())
+                            .build());
+
         }catch (Exception e){
             redisService.increaseRemainPieces(fundingJoinRequestDto.getFundingUuid(), fundingJoinRequestDto.getQuantity());
             throw new BaseException(BaseResponseStatus.INTERNAL_SERVER_ERROR,e);
@@ -52,6 +61,12 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
         try{
             participationRepository.save(cancelDto.toEntity(totalQuantity));
             //환불
+            paymentClient.cancelPayment(CreatePaymentRequestDto.builder()
+                    .fundingUuid(cancelDto.getFundingUuid())
+                    .memberUuid(cancelDto.getMemberUuid())
+                    .totalPrice( getPiecePrice(cancelDto.getFundingUuid()) * totalQuantity)
+                    .status(cancelDto.getParticipateStatus().toString())
+                    .build());
         }catch (Exception e){
             redisService.increaseRemainPieces(cancelDto.getFundingUuid(), totalQuantity);
             throw new BaseException(BaseResponseStatus.INTERNAL_SERVER_ERROR,e);
@@ -81,22 +96,8 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
 
     @Override
     public int getMyTotalParticipationQuantity(ParticipateFundingRequestDto participateFundingRequestDto) {
-        int join = participationRepository.findByFundingUuidAndMemberUuidAndParticipateStatus(
-                        participateFundingRequestDto.getFundingUuid(),
-                        participateFundingRequestDto.getMemberUuid(),
-                        ParticipateStatus.JOIN)
-                .stream()
-                .mapToInt(FundingParticipation::getQuantity)
-                .sum();
-
-        int cancel = participationRepository.findByFundingUuidAndMemberUuidAndParticipateStatus(
-                        participateFundingRequestDto.getFundingUuid(),
-                        participateFundingRequestDto.getMemberUuid(),
-                        ParticipateStatus.CANCEL)
-                .stream()
-                .mapToInt(FundingParticipation::getQuantity)
-                .sum();
-        return join - cancel;
+        return participationRepository.getJoinMinusCancelCount(participateFundingRequestDto.getFundingUuid(),
+                participateFundingRequestDto.getMemberUuid());
     }
 
     @Override
