@@ -12,8 +12,8 @@ import lombok.NoArgsConstructor;
 public class GetFundingResponseVo {
     private String fundingUuid;
     private String productUuid;
-    private Double fundingAmount;
-    private Double piecePrice;
+    private Long fundingAmount;
+    private Long piecePrice;
     private Integer totalPieces;
     private Integer remainingPieces;
     private String fundingDeadline;

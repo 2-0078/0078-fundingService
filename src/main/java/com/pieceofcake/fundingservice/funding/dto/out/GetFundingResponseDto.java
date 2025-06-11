@@ -13,8 +13,8 @@ import lombok.*;
 public class GetFundingResponseDto {
     private String fundingUuid;
     private String productUuid;
-    private Double fundingAmount;
-    private Double piecePrice;
+    private Long fundingAmount;
+    private Long piecePrice;
     private Integer totalPieces;
     private Integer remainingPieces;
     private String fundingDeadline;

@@ -8,12 +8,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class SetRedisFundingRequestDto {
     private String fundingUuid;
-    private Double piecePrice;
+    private Long piecePrice;
     private Integer totalPieces;
     private Integer remainingPieces;
 
     @Builder
-    public SetRedisFundingRequestDto(String fundingUuid, Double piecePrice, Integer totalPieces, Integer remainingPieces) {
+    public SetRedisFundingRequestDto(String fundingUuid, Long piecePrice, Integer totalPieces, Integer remainingPieces) {
         this.fundingUuid = fundingUuid;
         this.piecePrice = piecePrice;
         this.totalPieces = totalPieces;

@@ -9,8 +9,8 @@ import java.time.LocalDateTime;
 public class UpdateFundingRequestVo {
     private String fundingUuid;
     private String productUuid;
-    private Double fundingAmount;
-    private Double piecePrice;
+    private Long fundingAmount;
+    private Long piecePrice;
     private Integer totalPieces;
     private LocalDateTime fundingDeadline;
     private FundingStatus fundingStatus;
