@@ -2,6 +2,7 @@ package com.pieceofcake.fundingservice.funding.entity;
 
 import com.pieceofcake.fundingservice.common.entity.BaseEntity;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,10 +25,10 @@ public class Funding extends BaseEntity {
     private String productUuid;
 
     @Column(name = "funding_amount", nullable = false)
-    private Double fundingAmount;
+    private Long fundingAmount;
 
     @Column(name = "piece_price", nullable = false)
-    private Double piecePrice;
+    private Long piecePrice;
 
     @Column(name = "total_pieces", nullable = false)
     private Integer totalPieces;
@@ -45,33 +46,41 @@ public class Funding extends BaseEntity {
     @Column(name = "is_deleted")
     private Boolean isDeleted;
 
+
     @Builder
     public Funding(
             Long id,
             String fundingUuid,
             String productUuid,
-            Double fundingAmount,
-            Double piecePrice,
+            Long fundingAmount,
+            Long piecePrice,
             Integer totalPieces,
             Integer remainingPieces,
             LocalDateTime fundingDeadline,
             FundingStatus fundingStatus,
-            Boolean isDeleted) {
+            Boolean isDeleted
+    ) {
         this.id = id;
         this.fundingUuid = fundingUuid;
         this.productUuid = productUuid;
         this.fundingAmount = fundingAmount;
         this.piecePrice = piecePrice;
         this.totalPieces = totalPieces;
-        this.remainingPieces = remainingPieces;
-        this.fundingDeadline = fundingDeadline;
-        this.fundingStatus = fundingStatus;
         this.isDeleted = isDeleted;
+        this.remainingPieces = remainingPieces;
+        this.fundingStatus = fundingStatus;
+        this.remainingPieces = totalPieces;
+        this.fundingDeadline = fundingDeadline;
     }
 
     public void updateFundingStatus(FundingStatus fundingStatus){
         this.fundingStatus = fundingStatus;
     }
+
+    //참여자는 많음 => 재고관리 분리 / 재고만 관리하는 집계테이블(레디스) 소진시 이벤트
+//    public void increaseRemainingPieces(Integer quantity){this.remainingPieces += quantity;}
+//
+//    public void decreaseRemainingPieces(Integer quantity){this.remainingPieces -= quantity;}
 
     public void deleteFunding(){
         this.isDeleted = true;

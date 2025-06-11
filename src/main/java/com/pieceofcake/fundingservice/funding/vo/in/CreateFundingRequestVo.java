@@ -6,8 +6,8 @@ import lombok.Getter;
 @Getter
 public class CreateFundingRequestVo {
     private String productUuid;
-    private Double fundingAmount;
-    private Double piecePrice;
+    private Long fundingAmount;
+    private Long piecePrice;
     private Integer totalPieces;
 //    private LocalDateTime fundingDeadline;
     private FundingStatus fundingStatus;

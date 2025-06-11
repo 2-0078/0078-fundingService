@@ -17,8 +17,8 @@ import lombok.extern.slf4j.Slf4j;
 public class UpdateFundingRequestDto {
     private String fundingUuid;
 //    private String productUuid;
-    private Double fundingAmount;
-    private Double piecePrice;
+    private Long fundingAmount;
+    private Long piecePrice;
     private Integer totalPieces;
     private Integer remainingPieces;
 //    private LocalDateTime fundingDeadline;
