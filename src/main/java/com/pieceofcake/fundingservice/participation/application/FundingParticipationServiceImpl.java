@@ -58,8 +58,12 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
     }
 
     @Override
+    @Transactional
     public void cancelParticipation(ParticipateFundingRequestDto cancelDto) {
         int totalQuantity = getMyTotalParticipationQuantity(cancelDto);
+        if(totalQuantity == 0){
+            throw new BaseException(BaseResponseStatus.NO_PARTICIPATION_HISTORY);
+        }
         if(!redisService.increaseRemainPieces(cancelDto.getFundingUuid(), totalQuantity)){
             throw new BaseException(BaseResponseStatus.CANNOT_CANCEL_PARTICIPATION);
         }
