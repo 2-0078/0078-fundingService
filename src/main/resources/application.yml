@@ -21,6 +21,14 @@ spring:
       hibernate:
         format_sql: true
 
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://${EC2_HOST}:8761/eureka/
+
+
 springdoc:
   api-docs:
     path: /v3/api-docs
