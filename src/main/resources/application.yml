@@ -6,7 +6,7 @@ spring:
   application:
     name: funding-service
   profiles:
-    active: local
+    active: dev
 
   redis:
     data:
