@@ -25,26 +25,34 @@ public class FundingController {
 
     @Operation(summary = "공모 리스트 조회")
     @GetMapping
-    public BaseResponseEntity<List<GetFundingResponseVo>> getFundingList(){
+    public BaseResponseEntity<List<GetFundingResponseVo>> getFundingList(
+            @RequestHeader(value = "X-Member-Uuid") String memberUuid
+    ){
 //        return new BaseResponseEntity<>(fundingService.getFundingList().stream().map(GetFundingResponseDto::toVo).toList());
         return null;
     }
 
     @Operation(summary = "공모 UUID 리스트 조회")
     @GetMapping("/list")
-    public BaseResponseEntity<List<String>> getFundingUuidList(){
+    public BaseResponseEntity<List<String>> getFundingUuidList(
+            @RequestHeader(value = "X-Member-Uuid") String memberUuid
+    ){
         return new BaseResponseEntity<>(fundingService.getFundingUuidList());
     }
 
     @Operation(summary = "공모 상세 조회")
     @GetMapping("/{fundingUuid}")
-    public BaseResponseEntity<GetFundingResponseVo> getFunding(@PathVariable String fundingUuid){
+    public BaseResponseEntity<GetFundingResponseVo> getFunding(
+            @RequestHeader(value = "X-Member-Uuid") String memberUuid,
+            @PathVariable String fundingUuid){
         return new BaseResponseEntity<>(fundingService.getFunding(fundingUuid).toVo());
     }
 
     @Operation(summary = "공모 등록")
     @PostMapping
-    public BaseResponseEntity<Void> createFunding(@RequestBody CreateFundingRequestVo createFundingRequestVo){
+    public BaseResponseEntity<Void> createFunding(
+            @RequestHeader(value = "X-Member-Uuid") String memberUuid,
+            @RequestBody CreateFundingRequestVo createFundingRequestVo){
         fundingService.createFunding(CreateFundingRequestDto.from(createFundingRequestVo));
         return new BaseResponseEntity<>(BaseResponseStatus.SUCCESS);
     }
@@ -54,21 +62,27 @@ public class FundingController {
     * */
     @Operation(summary = "공모 수정")
     @PutMapping
-    public BaseResponseEntity<Void> updateFunding(@RequestBody UpdateFundingRequestVo updateFundingRequestVo){
+    public BaseResponseEntity<Void> updateFunding(
+            @RequestHeader(value = "X-Member-Uuid") String memberUuid,
+            @RequestBody UpdateFundingRequestVo updateFundingRequestVo){
         fundingService.updateFunding(UpdateFundingRequestDto.from(updateFundingRequestVo));
         return new BaseResponseEntity<>(BaseResponseStatus.SUCCESS);
     }
 
     @Operation(summary = "공모 상태 변경")
     @PutMapping("/status")
-    public BaseResponseEntity<Void> updateFundingStatus(@RequestBody UpdateFundingRequestVo updateFundingRequestVo){
+    public BaseResponseEntity<Void> updateFundingStatus(
+            @RequestHeader(value = "X-Member-Uuid") String memberUuid,
+            @RequestBody UpdateFundingRequestVo updateFundingRequestVo){
         fundingService.updateFundingStatus(UpdateFundingRequestDto.from(updateFundingRequestVo));
         return new BaseResponseEntity<>(BaseResponseStatus.SUCCESS);
     }
 
     @Operation(summary = "공모 삭제")
     @DeleteMapping("/{fundingUuid}")
-    public BaseResponseEntity<Void> deleteFunding(@PathVariable String fundingUuid){
+    public BaseResponseEntity<Void> deleteFunding(
+            @RequestHeader(value = "X-Member-Uuid") String memberUuid,
+            @PathVariable String fundingUuid){
         fundingService.deleteFunding(fundingUuid);
         return new BaseResponseEntity<>(BaseResponseStatus.SUCCESS);
     }
@@ -81,29 +95,34 @@ public class FundingController {
 
     @Operation(summary = "찜한 공모 전체 조회")
     @GetMapping("/wish")
-    public BaseResponseEntity<List<GetWishFundingResponseVo>> getWishFunding(){
-        String memberUuid = "member1212";
+    public BaseResponseEntity<List<GetWishFundingResponseVo>> getWishFunding(
+            @RequestHeader(value = "X-Member-Uuid") String memberUuid
+    ){
         return new BaseResponseEntity<>(fundingService.getWishFundingList(memberUuid).stream().map(GetWishFundingResponseDto::toVo).toList());
     }
 
     @Operation(summary = "공모 상품 찜 여부 조회")
     @GetMapping("/wish/{fundingUuid}")
-    public BaseResponseEntity<Boolean> isWishFunding(@PathVariable String fundingUuid){
-        String memberUuid = "member1212";
+    public BaseResponseEntity<Boolean> isWishFunding(
+            @RequestHeader(value = "X-Member-Uuid") String memberUuid,
+            @PathVariable String fundingUuid){
         return new BaseResponseEntity<>(fundingService.isWishFunding(fundingUuid, memberUuid));
     }
 
     @Operation(summary = "공모 찜하기")
     @PostMapping("/wish")
-    public BaseResponseEntity<Void> wishFunding(@RequestBody CreateWishFundingRequestVo createWishFundingRequestVo){
-        String memberUuid = "member1212";
+    public BaseResponseEntity<Void> wishFunding(
+            @RequestHeader(value = "X-Member-Uuid") String memberUuid,
+            @RequestBody CreateWishFundingRequestVo createWishFundingRequestVo){
         fundingService.wishFunding(CreateWishFundingRequestDto.from(createWishFundingRequestVo, memberUuid));
         return new BaseResponseEntity<>(BaseResponseStatus.SUCCESS);
     }
 
     @Operation(summary = "공모 찜 취소하기")
     @DeleteMapping("/wish/{id}")
-    public BaseResponseEntity<Void> cancelWishFunding(@PathVariable Long id){
+    public BaseResponseEntity<Void> cancelWishFunding(
+            @RequestHeader(value = "X-Member-Uuid") String memberUuid,
+            @PathVariable Long id){
         fundingService.cancelWishFunding(id);
         return new BaseResponseEntity<>(BaseResponseStatus.SUCCESS);
     }

@@ -8,11 +8,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class CreatePieceRequestDto {
     private String productUuid;
-    private int totalQuantity;
+    private Integer totalPieces;
 
     @Builder
-    public CreatePieceRequestDto(String productUuid, int totalQuantity) {
+    public CreatePieceRequestDto(String productUuid, Integer totalPieces) {
         this.productUuid = productUuid;
-        this.totalQuantity = totalQuantity;
+        this.totalPieces = totalPieces;
     }
 }

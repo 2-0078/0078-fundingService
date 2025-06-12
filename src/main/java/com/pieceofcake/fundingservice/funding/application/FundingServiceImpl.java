@@ -56,9 +56,9 @@ public class FundingServiceImpl implements FundingService {
                             .build()
             );
             fundingRepository.save(createFundingRequestDto.toEntity());
-            pieceClient.createPiece(CreatePieceRequestDto.builder()
+            pieceClient.createPieces(CreatePieceRequestDto.builder()
                     .productUuid(createFundingRequestDto.getProductUuid())
-                    .totalQuantity(createFundingRequestDto.getTotalPieces())
+                    .totalPieces(createFundingRequestDto.getTotalPieces())
                     .build());
 
         }catch (Exception e){

@@ -32,10 +32,10 @@ public class RedisServiceImpl implements RedisService {
     }
 
     @Override
-    public double getPiecePrice(String fundingUuid) {
+    public long getPiecePrice(String fundingUuid) {
         String keyPrefix = "funding:" + fundingUuid;
         String value = (String) redisTemplate.opsForValue().get(keyPrefix + ":price");
-        return value != null ? Double.parseDouble(value) : 0.0;
+        return value != null ? Long.parseLong(value) : 0;
     }
 
     @Override
@@ -65,7 +65,7 @@ public class RedisServiceImpl implements RedisService {
     }
 
     @Override
-    public Long decreaseRemainPieces(String fundingUuid, int quantity) {
+    public long decreaseRemainPieces(String fundingUuid, int quantity) {
         try {
             String script = new String(Files.readAllBytes(Paths.get("src/main/resources/scripts/join.lua")));
             String keyPrefix = "funding:" + fundingUuid;

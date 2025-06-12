@@ -6,9 +6,9 @@ import com.pieceofcake.fundingservice.funding.dto.in.UpdateFundingRequestDto;
 
 public interface RedisService {
     int getRemainingPieces(String fundingUuid);
-    double getPiecePrice(String fundingUuid);
+    long getPiecePrice(String fundingUuid);
     void setRemainingPieces(SetRedisFundingRequestDto setRedisFundingRequestDto);
     void deleteRemainingPieces(String fundingUuid);
-    Long decreaseRemainPieces(String fundingUuid, int quantity);
+    long decreaseRemainPieces(String fundingUuid, int quantity);
     boolean increaseRemainPieces(String fundingUuid, int quantity);
 }

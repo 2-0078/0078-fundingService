@@ -7,16 +7,21 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 public class CreatePaymentRequestDto {
-    private String fundingUuid;
-    private String memberUuid;
-    private Double totalPrice;
-    private String status;
+    private Long amount;
+    private Boolean isPositive;
+    private MoneyHistoryType historyType;
+    private String moneyHistoryDetail;
 
     @Builder
-    public CreatePaymentRequestDto(String fundingUuid, String memberUuid, Double totalPrice, String status) {
-        this.fundingUuid = fundingUuid;
-        this.memberUuid = memberUuid;
-        this.totalPrice = totalPrice;
-        this.status = status;
+    public CreatePaymentRequestDto(
+            Long amount,
+            Boolean isPositive,
+            MoneyHistoryType historyType,
+            String moneyHistoryDetail
+    ) {
+        this.amount = amount;
+        this.isPositive = isPositive;
+        this.historyType = historyType;
+        this.moneyHistoryDetail = moneyHistoryDetail;
     }
 }
