@@ -1,5 +1,9 @@
 package com.pieceofcake.fundingservice.participation.application;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pieceofcake.fundingservice.common.entity.BaseResponseEntity;
 import com.pieceofcake.fundingservice.common.entity.BaseResponseStatus;
 import com.pieceofcake.fundingservice.common.exception.BaseException;
 import com.pieceofcake.fundingservice.participation.dto.in.CancelParticipateFundingRequestDto;
@@ -10,6 +14,8 @@ import com.pieceofcake.fundingservice.participation.infrastructure.FundingPartic
 import com.pieceofcake.fundingservice.participation.entity.FundingParticipation;
 import com.pieceofcake.fundingservice.participation.infrastructure.client.PaymentClient;
 import com.pieceofcake.fundingservice.participation.infrastructure.client.dto.CreatePaymentRequestDto;
+import com.pieceofcake.fundingservice.participation.infrastructure.client.dto.MoneyHistoryType;
+import feign.FeignException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,13 +45,12 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
         try {
             participationRepository.save(fundingJoinRequestDto.toEntity((int)quantity));
             //결제
-            paymentClient.paymentPieces(CreatePaymentRequestDto.builder()
-                            .fundingUuid(fundingJoinRequestDto.getFundingUuid())
-                            .memberUuid(fundingJoinRequestDto.getMemberUuid())
-                            .totalPrice(getPiecePrice(fundingJoinRequestDto.getFundingUuid()) * fundingJoinRequestDto.getQuantity())
-                            .status(fundingJoinRequestDto.getParticipateStatus().toString())
+            paymentClient.createMoney(CreatePaymentRequestDto.builder()
+                            .amount(getPiecePrice(fundingJoinRequestDto.getFundingUuid()) * fundingJoinRequestDto.getQuantity())
+                            .isPositive(false)
+                            .historyType(MoneyHistoryType.FUNDING)
+                            .moneyHistoryDetail(fundingJoinRequestDto.getFundingUuid())
                             .build());
-
         }catch (Exception e){
             redisService.increaseRemainPieces(fundingJoinRequestDto.getFundingUuid(), fundingJoinRequestDto.getQuantity());
             throw new BaseException(BaseResponseStatus.INTERNAL_SERVER_ERROR,e);
@@ -55,18 +60,17 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
     @Override
     public void cancelParticipation(ParticipateFundingRequestDto cancelDto) {
         int totalQuantity = getMyTotalParticipationQuantity(cancelDto);
-
         if(!redisService.increaseRemainPieces(cancelDto.getFundingUuid(), totalQuantity)){
             throw new BaseException(BaseResponseStatus.CANNOT_CANCEL_PARTICIPATION);
         }
         try{
             participationRepository.save(cancelDto.toEntity(totalQuantity));
             //환불
-            paymentClient.cancelPayment(CreatePaymentRequestDto.builder()
-                    .fundingUuid(cancelDto.getFundingUuid())
-                    .memberUuid(cancelDto.getMemberUuid())
-                    .totalPrice( getPiecePrice(cancelDto.getFundingUuid()) * totalQuantity)
-                    .status(cancelDto.getParticipateStatus().toString())
+            paymentClient.createMoney(CreatePaymentRequestDto.builder()
+                    .amount(getPiecePrice(cancelDto.getFundingUuid()) * totalQuantity)
+                    .isPositive(true)
+                    .historyType(MoneyHistoryType.REFUND)
+                    .moneyHistoryDetail(cancelDto.getFundingUuid()+"- 공모 취소")
                     .build());
         }catch (Exception e){
             redisService.increaseRemainPieces(cancelDto.getFundingUuid(), totalQuantity);
@@ -106,7 +110,7 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
         return redisService.getRemainingPieces(fundingUuid);
     }
 
-    private double getPiecePrice(String fundingUuid) {
+    private long getPiecePrice(String fundingUuid) {
         return redisService.getPiecePrice(fundingUuid);
     }
 }
