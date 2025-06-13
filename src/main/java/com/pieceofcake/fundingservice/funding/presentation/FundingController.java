@@ -25,26 +25,20 @@ public class FundingController {
 
     @Operation(summary = "공모 리스트 조회")
     @GetMapping
-    public BaseResponseEntity<List<GetFundingResponseVo>> getFundingList(
-            @RequestHeader(value = "X-Member-Uuid") String memberUuid
-    ){
+    public BaseResponseEntity<List<GetFundingResponseVo>> getFundingList(){
 //        return new BaseResponseEntity<>(fundingService.getFundingList().stream().map(GetFundingResponseDto::toVo).toList());
         return null;
     }
 
     @Operation(summary = "공모 UUID 리스트 조회")
     @GetMapping("/list")
-    public BaseResponseEntity<List<String>> getFundingUuidList(
-            @RequestHeader(value = "X-Member-Uuid") String memberUuid
-    ){
+    public BaseResponseEntity<List<String>> getFundingUuidList(){
         return new BaseResponseEntity<>(fundingService.getFundingUuidList());
     }
 
     @Operation(summary = "공모 상세 조회")
     @GetMapping("/{fundingUuid}")
-    public BaseResponseEntity<GetFundingResponseVo> getFunding(
-            @RequestHeader(value = "X-Member-Uuid") String memberUuid,
-            @PathVariable String fundingUuid){
+    public BaseResponseEntity<GetFundingResponseVo> getFunding(@PathVariable String fundingUuid){
         return new BaseResponseEntity<>(fundingService.getFunding(fundingUuid).toVo());
     }
 
@@ -86,12 +80,6 @@ public class FundingController {
         fundingService.deleteFunding(fundingUuid);
         return new BaseResponseEntity<>(BaseResponseStatus.SUCCESS);
     }
-
-//    @Operation(summary = "공모 잔여 조각 조회")
-//    @GetMapping("/remain/{fundingUuid}")
-//    public BaseResponseEntity<Integer> getFundingRemainPieces(@PathVariable String fundingUuid){
-//        return new BaseResponseEntity<>(fundingService.getRemainingPieces(fundingUuid));
-//    }
 
     @Operation(summary = "찜한 공모 전체 조회")
     @GetMapping("/wish")
