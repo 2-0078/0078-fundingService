@@ -73,10 +73,7 @@ public class ParticipationController {
 
     @Operation(summary = "남은 조각 수 조회")
     @GetMapping("/remain/{fundingUuid}")
-    public BaseResponseEntity<Integer> getRemainPieces(
-            @RequestHeader(value = "X-Member-Uuid") String memberUuid,
-            @PathVariable String fundingUuid
-    ){
+    public BaseResponseEntity<Integer> getRemainPieces(@PathVariable String fundingUuid){
         return new BaseResponseEntity<>(participationService.getRemainingPieces(fundingUuid));
     }
 }
