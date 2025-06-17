@@ -1,5 +1,6 @@
 package com.pieceofcake.fundingservice.funding.infrastructure.kafka.config;
 
+import com.pieceofcake.fundingservice.funding.infrastructure.kafka.producer.FundingEvent;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -8,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 
 import java.util.HashMap;
@@ -29,13 +31,13 @@ public class KafkaConfig {
         return props;
     }
 
-//    @Bean
-//    public ProducerFactory<String, ProductEvent> createProductNotification() {
-//        return new DefaultKafkaProducerFactory<>(productProducerConfigs());
-//    }
-//
-//    @Bean
-//    public KafkaTemplate<String, ProductEvent> kafkaTemplate() {
-//        return new KafkaTemplate<>(createProductNotification());
-//    }
+    @Bean
+    public ProducerFactory<String, FundingEvent> createProductNotification() {
+        return new DefaultKafkaProducerFactory<>(productProducerConfigs());
+    }
+
+    @Bean
+    public KafkaTemplate<String, FundingEvent> kafkaTemplate() {
+        return new KafkaTemplate<>(createProductNotification());
+    }
 }
