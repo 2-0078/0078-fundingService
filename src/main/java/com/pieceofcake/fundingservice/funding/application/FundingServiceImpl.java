@@ -9,12 +9,16 @@ import com.pieceofcake.fundingservice.funding.entity.Funding;
 import com.pieceofcake.fundingservice.funding.entity.FundingStatus;
 import com.pieceofcake.fundingservice.funding.infrastructure.client.PieceClient;
 import com.pieceofcake.fundingservice.funding.infrastructure.client.dto.CreatePieceRequestDto;
+import com.pieceofcake.fundingservice.funding.infrastructure.kafka.producer.FundingEvent;
+import com.pieceofcake.fundingservice.funding.infrastructure.kafka.producer.FundingKafkaProducer;
 import com.pieceofcake.fundingservice.funding.infrastructure.repository.FundingRepository;
 import com.pieceofcake.fundingservice.funding.infrastructure.repository.WishFundingRepository;
 import com.pieceofcake.fundingservice.participation.application.RedisService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
 
@@ -27,6 +31,7 @@ public class FundingServiceImpl implements FundingService {
     private final WishFundingRepository wishFundingRepository;
     private final RedisService redisService;
     private final PieceClient pieceClient;
+    private final FundingKafkaProducer fundingKafkaProducer;
 
     /*
     * 상품명, 카테고리, (최신/가격/남은조각 수) 정렬
@@ -55,11 +60,30 @@ public class FundingServiceImpl implements FundingService {
                             .piecePrice(createFundingRequestDto.getPiecePrice())
                             .build()
             );
-            fundingRepository.save(createFundingRequestDto.toEntity());
+            Funding saved = fundingRepository.save(createFundingRequestDto.toEntity());
+            //조각 발행
             pieceClient.createPieces(CreatePieceRequestDto.builder()
                     .productUuid(createFundingRequestDto.getProductUuid())
                     .totalPieces(createFundingRequestDto.getTotalPieces())
                     .build());
+
+            //카프카 이벤트 발행
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    FundingEvent event = FundingEvent.builder()
+                            .fundingUuid(saved.getFundingUuid())
+                            .productUuid(saved.getProductUuid())
+                            .totalPieces(saved.getTotalPieces())
+                            .remainingPieces(saved.getRemainingPieces())
+                            .piecePrice(saved.getPiecePrice())
+                            .fundingAmount(saved.getFundingAmount())
+                            .fundingDeadline(saved.getFundingDeadline().toString())
+                            .fundingStatus(saved.getFundingStatus().toString())
+                            .build();
+                    fundingKafkaProducer.sendCreateFundingEvent(event);
+                }
+            });
 
         }catch (Exception e){
             throw new BaseException(BaseResponseStatus.INTERNAL_SERVER_ERROR,e);
