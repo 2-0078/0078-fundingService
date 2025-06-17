@@ -17,6 +17,6 @@ public class FundingKafkaProducer {
     public void sendCreateFundingEvent(FundingEvent fundingEvent) {
         log.info("sendFundingEvent: {}", fundingEvent);
         CompletableFuture<SendResult<String, FundingEvent>> future
-                = kafkaTemplate.send("create-funding-send-read", fundingEvent);
+                = kafkaTemplate.send("create-funding", fundingEvent);
     }
 }
