@@ -10,5 +10,5 @@ public class CreateFundingRequestVo {
     private Long piecePrice;
     private Integer totalPieces;
 //    private LocalDateTime fundingDeadline;
-    private FundingStatus fundingStatus;
+//    private FundingStatus fundingStatus;
 }

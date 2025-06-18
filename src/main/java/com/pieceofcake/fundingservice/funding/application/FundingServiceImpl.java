@@ -47,10 +47,12 @@ public class FundingServiceImpl implements FundingService {
                 .orElseThrow(()-> new IllegalArgumentException("no funding")) );
     }
 
+    /*
+    * 공모 등록시에는 Status : READY -> 조각 발행 X
+    * */
     @Override
     @Transactional
     public void createFunding(CreateFundingRequestDto createFundingRequestDto) {
-
         try {
             redisService.setRemainingPieces(
                     SetRedisFundingRequestDto.builder()
@@ -61,11 +63,6 @@ public class FundingServiceImpl implements FundingService {
                             .build()
             );
             Funding saved = fundingRepository.save(createFundingRequestDto.toEntity());
-            //조각 발행
-            pieceClient.createPieces(CreatePieceRequestDto.builder()
-                    .productUuid(createFundingRequestDto.getProductUuid())
-                    .totalPieces(createFundingRequestDto.getTotalPieces())
-                    .build());
 
             //카프카 이벤트 발행
             createFundingEvent(saved);
@@ -83,7 +80,7 @@ public class FundingServiceImpl implements FundingService {
         if(entity.getFundingStatus() != FundingStatus.READY){
             throw new BaseException(BaseResponseStatus.FAILED_TO_UPDATE);
         }
-        System.out.println("setRemainingPieces Start");
+        //레디스 설정 초기화
         redisService.setRemainingPieces(
                 SetRedisFundingRequestDto.builder()
                         .fundingUuid(updateFundingRequestDto.getFundingUuid())
@@ -93,8 +90,11 @@ public class FundingServiceImpl implements FundingService {
                         .build()
         );
         Funding saved = fundingRepository.save(updateFundingRequestDto.toEntity(entity));
-        System.out.println("event Start");
-        //조각 수정
+        //조각 발행
+        if(updateFundingRequestDto.getFundingStatus() == FundingStatus.FUNDING){
+            createPieces(saved.getProductUuid(), saved.getTotalPieces());
+        }
+
         //카프카 이벤트 발행
         createFundingEvent(saved);
 
@@ -113,6 +113,11 @@ public class FundingServiceImpl implements FundingService {
             entity.updateFundingStatus(target);
         } else {
             throw new IllegalStateException("허용되지 않은 상태 변경: " + current + " → " + target);
+        }
+
+        //조각 발행
+        if(updateFundingRequestDto.getFundingStatus() == FundingStatus.FUNDING){
+            createPieces(entity.getProductUuid(), entity.getTotalPieces());
         }
 
         //카프카 이벤트 발행
@@ -208,6 +213,14 @@ public class FundingServiceImpl implements FundingService {
         wishFundingRepository.deleteById(id);
     }
 
+    private void createPieces(String productUuid, int totalPieces){
+        //조각 발행
+        pieceClient.createPieces(CreatePieceRequestDto.builder()
+                .productUuid(productUuid)
+                .totalPieces(totalPieces)
+                .build());
+    }
+
     private void createFundingEvent(Funding entity){
         //카프카 이벤트 발행
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
@@ -229,7 +242,6 @@ public class FundingServiceImpl implements FundingService {
     }
 
     private void deleteFundingEvent(Funding entity){
-        System.out.println(entity.getProductUuid()+" deleteFundingEvent Start");
         //카프카 이벤트 발행
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
