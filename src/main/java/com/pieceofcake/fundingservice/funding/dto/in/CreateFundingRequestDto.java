@@ -36,7 +36,7 @@ public class CreateFundingRequestDto {
                 .totalPieces(createFundingRequestVo.getTotalPieces())
                 .remainingPieces(createFundingRequestVo.getTotalPieces())
                 .fundingDeadline(createFundingDeadline())
-                .fundingStatus(createFundingRequestVo.getFundingStatus())
+                .fundingStatus(FundingStatus.READY)
                 .build();
     }
 
