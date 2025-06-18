@@ -68,29 +68,14 @@ public class FundingServiceImpl implements FundingService {
                     .build());
 
             //카프카 이벤트 발행
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    FundingEvent event = FundingEvent.builder()
-                            .fundingUuid(saved.getFundingUuid())
-                            .productUuid(saved.getProductUuid())
-                            .totalPieces(saved.getTotalPieces())
-                            .remainingPieces(saved.getRemainingPieces())
-                            .piecePrice(saved.getPiecePrice())
-                            .fundingAmount(saved.getFundingAmount())
-                            .fundingDeadline(saved.getFundingDeadline().toString())
-                            .fundingStatus(saved.getFundingStatus().toString())
-                            .build();
-                    fundingKafkaProducer.sendCreateFundingEvent(event);
-                }
-            });
-
+            createFundingEvent(saved);
         }catch (Exception e){
             throw new BaseException(BaseResponseStatus.INTERNAL_SERVER_ERROR,e);
         }
     }
 
     @Override
+    @Transactional
     public void updateFunding(UpdateFundingRequestDto updateFundingRequestDto) {
         Funding entity = fundingRepository.findByFundingUuid(updateFundingRequestDto.getFundingUuid())
                 .orElseThrow(() -> new BaseException(BaseResponseStatus.NO_EXIST_FUNDING));
@@ -98,6 +83,7 @@ public class FundingServiceImpl implements FundingService {
         if(entity.getFundingStatus() != FundingStatus.READY){
             throw new BaseException(BaseResponseStatus.FAILED_TO_UPDATE);
         }
+        System.out.println("setRemainingPieces Start");
         redisService.setRemainingPieces(
                 SetRedisFundingRequestDto.builder()
                         .fundingUuid(updateFundingRequestDto.getFundingUuid())
@@ -106,7 +92,12 @@ public class FundingServiceImpl implements FundingService {
                         .piecePrice(updateFundingRequestDto.getPiecePrice())
                         .build()
         );
-        fundingRepository.save(updateFundingRequestDto.toEntity(entity));
+        Funding saved = fundingRepository.save(updateFundingRequestDto.toEntity(entity));
+        System.out.println("event Start");
+        //조각 수정
+        //카프카 이벤트 발행
+        createFundingEvent(saved);
+
     }
 
     @Override
@@ -123,6 +114,10 @@ public class FundingServiceImpl implements FundingService {
         } else {
             throw new IllegalStateException("허용되지 않은 상태 변경: " + current + " → " + target);
         }
+
+        //카프카 이벤트 발행
+        createFundingEvent(entity);
+
     }
 
     @Override
@@ -135,6 +130,8 @@ public class FundingServiceImpl implements FundingService {
             throw new BaseException(BaseResponseStatus.FAILED_TO_UPDATE);
         }
         entity.deleteFunding();
+
+        deleteFundingEvent(entity);
     }
 
 
@@ -209,5 +206,39 @@ public class FundingServiceImpl implements FundingService {
     @Override
     public void cancelWishFunding(Long id) {
         wishFundingRepository.deleteById(id);
+    }
+
+    private void createFundingEvent(Funding entity){
+        //카프카 이벤트 발행
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                FundingEvent event = FundingEvent.builder()
+                        .fundingUuid(entity.getFundingUuid())
+                        .productUuid(entity.getProductUuid())
+                        .totalPieces(entity.getTotalPieces())
+                        .remainingPieces(entity.getRemainingPieces())
+                        .piecePrice(entity.getPiecePrice())
+                        .fundingAmount(entity.getFundingAmount())
+                        .fundingDeadline(entity.getFundingDeadline().toString())
+                        .fundingStatus(entity.getFundingStatus().toString())
+                        .build();
+                fundingKafkaProducer.sendCreateFundingEvent(event);
+            }
+        });
+    }
+
+    private void deleteFundingEvent(Funding entity){
+        System.out.println(entity.getProductUuid()+" deleteFundingEvent Start");
+        //카프카 이벤트 발행
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                FundingEvent event = FundingEvent.builder()
+                        .productUuid(entity.getProductUuid())
+                        .build();
+                fundingKafkaProducer.sendDeleteFundingEvent(event);
+            }
+        });
     }
 }
