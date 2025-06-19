@@ -13,6 +13,7 @@ import java.util.concurrent.CompletableFuture;
 @Service
 public class FundingKafkaProducer {
     private final KafkaTemplate<String, FundingEvent> kafkaTemplate;
+    private final KafkaTemplate<String, RefundEvent> refundKafkaTemplate;
 
     public void sendCreateFundingEvent(FundingEvent fundingEvent) {
         log.info("sendFundingEvent: {}", fundingEvent);
@@ -24,5 +25,11 @@ public class FundingKafkaProducer {
         log.info("sendFundingEvent: {}", fundingEvent);
         CompletableFuture<SendResult<String, FundingEvent>> future
                 = kafkaTemplate.send("delete-funding", fundingEvent);
+    }
+
+    public void sendRefundEvent(RefundEvent refundEvent) {
+        log.info("sendRefundEvent: {}", refundEvent);
+        CompletableFuture<SendResult<String, RefundEvent>> future
+                = refundKafkaTemplate.send("refund-funding", refundEvent);
     }
 }

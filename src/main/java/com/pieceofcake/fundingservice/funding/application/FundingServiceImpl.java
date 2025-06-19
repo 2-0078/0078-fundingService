@@ -16,6 +16,7 @@ import com.pieceofcake.fundingservice.funding.infrastructure.repository.WishFund
 import com.pieceofcake.fundingservice.participation.application.RedisService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -23,6 +24,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.util.List;
 
 
+@Slf4j
 @RequiredArgsConstructor
 @Service
 public class FundingServiceImpl implements FundingService {
