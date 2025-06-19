@@ -3,6 +3,7 @@ package com.pieceofcake.fundingservice.batch.application.config;
 import com.pieceofcake.fundingservice.batch.dto.FundingRefundDto;
 import com.pieceofcake.fundingservice.funding.entity.Funding;
 import com.pieceofcake.fundingservice.funding.entity.FundingStatus;
+import com.pieceofcake.fundingservice.funding.infrastructure.kafka.producer.FundingEvent;
 import com.pieceofcake.fundingservice.funding.infrastructure.kafka.producer.FundingKafkaProducer;
 import com.pieceofcake.fundingservice.funding.infrastructure.kafka.producer.RefundEvent;
 import com.pieceofcake.fundingservice.funding.infrastructure.repository.FundingRepository;
@@ -47,8 +48,8 @@ public class FundingCloseConfig {
     private final RedisService redisService;
 
     @Bean
-    public Job dailyFundingJob(){
-        return new JobBuilder("dailyFundingJob",jobRepository)
+    public Job dailyFundingJob() {
+        return new JobBuilder("dailyFundingJob", jobRepository)
                 .start(updateFundingRemainPiecesStep())
                 .next(fundingCloseStep())
                 .next(refundFundingStep())
@@ -56,9 +57,9 @@ public class FundingCloseConfig {
     }
 
     @Bean
-    public Step updateFundingRemainPiecesStep(){
-        return new StepBuilder("updateFundingRemainPiecesStep",jobRepository)
-                .<Funding,Funding>chunk(500, transactionManager)
+    public Step updateFundingRemainPiecesStep() {
+        return new StepBuilder("updateFundingRemainPiecesStep", jobRepository)
+                .<Funding, Funding>chunk(500, transactionManager)
                 .reader(fundingRemainPiecesReader())
                 .processor(fundingRemainPiecesProcessor())
                 .writer(fundingRemainPiecesWriter())
@@ -66,7 +67,7 @@ public class FundingCloseConfig {
     }
 
     @Bean
-    public JpaCursorItemReader<Funding> fundingRemainPiecesReader(){
+    public JpaCursorItemReader<Funding> fundingRemainPiecesReader() {
 
         JpaCursorItemReader<Funding> reader = new JpaCursorItemReader<>();
         reader.setName("FundingCloseItemReader");
@@ -77,27 +78,27 @@ public class FundingCloseConfig {
     }
 
     @Bean
-    public ItemProcessor<Funding,Funding> fundingRemainPiecesProcessor(){
-         return item -> {
+    public ItemProcessor<Funding, Funding> fundingRemainPiecesProcessor() {
+        return item -> {
             item.updateRemainingPieces(redisService.getRemainingPieces(item.getFundingUuid()));
             return item;
         };
     }
 
     @Bean
-    public ItemWriter<Funding> fundingRemainPiecesWriter(){
+    public ItemWriter<Funding> fundingRemainPiecesWriter() {
         return fundingRepository::saveAll;
     }
 
 
     /*
-    * Step2
-    * 공모 완료/취소 처리
-    * */
+     * Step2
+     * 공모 완료/취소 처리
+     * */
     @Bean
-    public Step fundingCloseStep(){
-        return new StepBuilder("FundingCloseStep",jobRepository)
-                .<Funding,Funding>chunk(500, transactionManager)
+    public Step fundingCloseStep() {
+        return new StepBuilder("FundingCloseStep", jobRepository)
+                .<Funding, Funding>chunk(500, transactionManager)
                 .reader(fundingCloseItemReader(null))
                 .processor(fundingCloseItemProcessor())
                 .writer(fundingCloseItemWriter())
@@ -108,7 +109,7 @@ public class FundingCloseConfig {
     @StepScope
     public JpaCursorItemReader<Funding> fundingCloseItemReader(
             @Value("#{jobParameters['date']}") String dateStr
-    ){
+    ) {
         LocalDate targetDate = LocalDate.parse(dateStr); // 예: "2025-06-18"
         LocalDateTime start = targetDate.atStartOfDay(); // 2025-06-18T00:00:00
         LocalDateTime end = targetDate.plusDays(1).atStartOfDay().minusNanos(1); // 2025-06-18T23:59:59.999999999
@@ -125,19 +126,37 @@ public class FundingCloseConfig {
     }
 
     @Bean
-    public ItemProcessor<Funding, Funding> fundingCloseItemProcessor(){
-        return item ->{
-            if(item.getTotalPieces() * 0.3 >= item.getRemainingPieces()){
+    public ItemProcessor<Funding, Funding> fundingCloseItemProcessor() {
+        return item -> {
+            if (item.getTotalPieces() * 0.3 >= item.getRemainingPieces()) {
                 item.updateFundingStatus(FundingStatus.COMPLETED);
-            }else{
+            } else {
                 item.updateFundingStatus(FundingStatus.CANCELLED);
             }
+
+            //상태 변경 카프카
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    FundingEvent event = FundingEvent.builder()
+                            .fundingUuid(item.getFundingUuid())
+                            .productUuid(item.getProductUuid())
+                            .totalPieces(item.getTotalPieces())
+                            .remainingPieces(item.getRemainingPieces())
+                            .piecePrice(item.getPiecePrice())
+                            .fundingAmount(item.getFundingAmount())
+                            .fundingDeadline(item.getFundingDeadline().toString())
+                            .fundingStatus(item.getFundingStatus().toString())
+                            .build();
+                    fundingKafkaProducer.sendCreateFundingEvent(event);
+                }
+            });
             return item;
         };
     }
 
     @Bean
-    public ItemWriter<Funding> fundingCloseItemWriter(){
+    public ItemWriter<Funding> fundingCloseItemWriter() {
         return fundingRepository::saveAll;
     }
 
@@ -149,9 +168,9 @@ public class FundingCloseConfig {
      * 공모 환불 내역 저장 -> 실제 환불처리 X
      * */
     @Bean
-    public Step refundFundingStep(){
-        return new StepBuilder("refundFundingStep",jobRepository)
-                .<FundingRefundDto,FundingParticipation>chunk(500, transactionManager)
+    public Step refundFundingStep() {
+        return new StepBuilder("refundFundingStep", jobRepository)
+                .<FundingRefundDto, FundingParticipation>chunk(500, transactionManager)
                 .reader(refundFundingItemReader(null))
                 .processor(refundFundingItemProcessor())
                 .writer(refundParticipationItemWriter())
@@ -162,19 +181,31 @@ public class FundingCloseConfig {
     @StepScope
     public JdbcCursorItemReader<FundingRefundDto> refundFundingItemReader(
             @Value("#{jobParameters['date']}") String dateStr
-    ){
+    ) {
         LocalDate targetDate = LocalDate.parse(dateStr); // 예: "2025-06-18"
         LocalDateTime start = targetDate.atStartOfDay(); // 2025-06-18T00:00:00
         LocalDateTime end = targetDate.plusDays(1).atStartOfDay().minusNanos(1); // 2025-06-18T23:59:59.999999999
 
         JdbcCursorItemReader<FundingRefundDto> reader = new JdbcCursorItemReader<>();
         reader.setDataSource(dataSource);
-        reader.setSql("SELECT f.funding_uuid, fp.member_uuid, sum(fp.quantity) as total_quantity, sum(fp.quantity)*f.piece_price as total_refund, ? as cancel_date " +
+        reader.setSql("SELECT " +
+                "    f.funding_uuid, " +
+                "    fp.member_uuid, " +
+                "    fp.total_quantity, " +
+                "    fp.total_quantity * f.piece_price as total_refund, " +
+                "    ? as cancel_date " +
                 "FROM funding f " +
-                "left join funding_participation fp on fp.funding_uuid = f.funding_uuid " +
-                "WHERE f.funding_status = 'CANCELLED' " +
-                "AND f.funding_deadline BETWEEN ? AND ? " +
-                "group by f.funding_uuid,fp.member_uuid");
+                "LEFT JOIN ( " +
+                "    SELECT " +
+                "        fp.funding_uuid, " +
+                "        fp.member_uuid, " +
+                "        SUM(CASE WHEN fp.participate_status = 'JOIN' THEN fp.quantity ELSE 0 END) " +
+                "        - SUM(CASE WHEN fp.participate_status = 'CANCEL' THEN fp.quantity ELSE 0 END) AS total_quantity " +
+                "    FROM funding_participation fp " +
+                "    GROUP BY fp.funding_uuid, fp.member_uuid " +
+                ") fp ON f.funding_uuid = fp.funding_uuid " +
+                "WHERE f.funding_status = 'CANCELLED' and fp.total_quantity > 0 " +
+                "  AND f.funding_deadline BETWEEN ? AND ? ");
 
         reader.setPreparedStatementSetter(ps -> {
             ps.setObject(1, targetDate);
@@ -197,7 +228,7 @@ public class FundingCloseConfig {
     }
 
     @Bean
-    public ItemProcessor<FundingRefundDto, FundingParticipation> refundFundingItemProcessor(){
+    public ItemProcessor<FundingRefundDto, FundingParticipation> refundFundingItemProcessor() {
         return item -> {
             //kafka event -> 예치금 서비스
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
@@ -216,10 +247,8 @@ public class FundingCloseConfig {
         };
     }
 
-
     @Bean
-    public ItemWriter<FundingParticipation> refundParticipationItemWriter(){
+    public ItemWriter<FundingParticipation> refundParticipationItemWriter() {
         return participationRepository::saveAll;
     }
-
 }

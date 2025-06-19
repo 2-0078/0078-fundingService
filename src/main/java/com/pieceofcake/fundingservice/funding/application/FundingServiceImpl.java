@@ -141,55 +141,8 @@ public class FundingServiceImpl implements FundingService {
         deleteFundingEvent(entity);
     }
 
-
-    /*
-    * 남은 수량 조회, 0이면 throw 조각 없음 오류
-    * 남은 수량 - 주문수량(비관적락), 계산 결과가 0보다 작으면 남은 수량이 0이 될때까지의 값만 처리(일부만 조각 결제)
-    * 참여 내역 저장
-    * */
-//    @Override
-//    @Transactional
-//    public void participateFunding(ParticipateFundingRequestDto fundingJoinRequestDto) {
-//        //수량 조회
-//        Funding funding = fundingRepository.findByFundingUuidWithLock(fundingJoinRequestDto.getFundingUuid())
-//                .orElseThrow(()-> new BaseException(BaseResponseStatus.NO_EXIST_FUNDING));
-//        if(funding.getRemainingPieces() == 0){
-//            throw new BaseException(BaseResponseStatus.NO_MORE_PIECES);
-//        }
-//
-//        //결제 서비스
-//        //조각 서비스
-//
-//        //수량 차감
-//        funding.decreaseRemainingPieces(fundingJoinRequestDto.getQuantity());
-//
-//        //참여내역 저장
-//        participationService.joinFunding(fundingJoinRequestDto); //롤백 문제-> 카프카
-//
-//        //레디스 (대기번호 실시간으로)-> 차감 -> 히스토리 저장
-//        //샤딩 -> 제이미터 테스트
-//        // 재고관리ㅣ 서비스 따로  rabbit mq
-//    }
-
-//    @Override
-//    @Transactional
-//    public void cancelFunding(CancelParticipateFundingRequestDto cancelDto) {
-//        //참여내역 총합 조회
-//        int totalQuantity = participationService.getMyTotalParticipationQuantity(cancelDto.getFundingUuid(), cancelDto.getMemberUuid());
-//        //공모 불러오기
-//        Funding funding = fundingRepository.findByFundingUuidWithLock(cancelDto.getFundingUuid())
-//                .orElseThrow(()-> new BaseException(BaseResponseStatus.NO_EXIST_FUNDING));
-//        //남은 조각 증가
-//        funding.increaseRemainingPieces(totalQuantity);
-//        //참여내역 cancel
-//        participationService.cancelParticipation(cancelDto.getFundingUuid(), cancelDto.getMemberUuid());
-////취소내역 create 해야함
-//        //결제 서비스 - 환불
-//        //조각 서비스 - 조각 상태 변경
-//    }
-
     @Override
-    public int getRemainingPieces(String fundingUuid) { //실시간으로?
+    public int getRemainingPieces(String fundingUuid) {
         return fundingRepository.findByFundingUuid(fundingUuid).orElseThrow(
                 ()-> new BaseException(BaseResponseStatus.NO_EXIST_FUNDING)
         ).getRemainingPieces();
