@@ -8,6 +8,10 @@ spring:
   profiles:
     active: dev
 
+  batch:
+    job:
+      enabled: false
+
   redis:
     data:
       host: localhost

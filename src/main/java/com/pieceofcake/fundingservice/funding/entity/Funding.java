@@ -77,10 +77,9 @@ public class Funding extends BaseEntity {
         this.fundingStatus = fundingStatus;
     }
 
-    //참여자는 많음 => 재고관리 분리 / 재고만 관리하는 집계테이블(레디스) 소진시 이벤트
-//    public void increaseRemainingPieces(Integer quantity){this.remainingPieces += quantity;}
-//
-//    public void decreaseRemainingPieces(Integer quantity){this.remainingPieces -= quantity;}
+    public void updateRemainingPieces(Integer remainingPieces){
+        this.remainingPieces = remainingPieces;
+    }
 
     public void deleteFunding(){
         this.isDeleted = true;
