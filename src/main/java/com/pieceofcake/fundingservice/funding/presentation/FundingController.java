@@ -8,6 +8,7 @@ import com.pieceofcake.fundingservice.funding.dto.out.GetWishFundingResponseDto;
 import com.pieceofcake.fundingservice.funding.vo.in.CreateFundingRequestVo;
 import com.pieceofcake.fundingservice.funding.vo.in.CreateWishFundingRequestVo;
 import com.pieceofcake.fundingservice.funding.vo.in.UpdateFundingRequestVo;
+import com.pieceofcake.fundingservice.funding.vo.in.UpdateFundingStatusRequestVo;
 import com.pieceofcake.fundingservice.funding.vo.out.GetFundingResponseVo;
 import com.pieceofcake.fundingservice.funding.vo.out.GetWishFundingResponseVo;
 import io.swagger.v3.oas.annotations.Operation;
@@ -23,18 +24,18 @@ public class FundingController {
 
     private final FundingService fundingService;
 
-    @Operation(summary = "공모 리스트 조회")
-    @GetMapping
-    public BaseResponseEntity<List<GetFundingResponseVo>> getFundingList(){
-//        return new BaseResponseEntity<>(fundingService.getFundingList().stream().map(GetFundingResponseDto::toVo).toList());
-        return null;
-    }
-
-    @Operation(summary = "공모 UUID 리스트 조회")
-    @GetMapping("/list")
-    public BaseResponseEntity<List<String>> getFundingUuidList(){
-        return new BaseResponseEntity<>(fundingService.getFundingUuidList());
-    }
+//    @Operation(summary = "공모 리스트 조회")
+//    @GetMapping
+//    public BaseResponseEntity<List<GetFundingResponseVo>> getFundingList(){
+////        return new BaseResponseEntity<>(fundingService.getFundingList().stream().map(GetFundingResponseDto::toVo).toList());
+//        return null;
+//    }
+//
+//    @Operation(summary = "공모 UUID 리스트 조회")
+//    @GetMapping("/list")
+//    public BaseResponseEntity<List<String>> getFundingUuidList(){
+//        return new BaseResponseEntity<>(fundingService.getFundingUuidList());
+//    }
 
     @Operation(summary = "공모 상세 조회")
     @GetMapping("/{fundingUuid}")
@@ -67,8 +68,8 @@ public class FundingController {
     @PutMapping("/status")
     public BaseResponseEntity<Void> updateFundingStatus(
             @RequestHeader(value = "X-Member-Uuid") String memberUuid,
-            @RequestBody UpdateFundingRequestVo updateFundingRequestVo){
-        fundingService.updateFundingStatus(UpdateFundingRequestDto.from(updateFundingRequestVo));
+            @RequestBody UpdateFundingStatusRequestVo updateFundingStatusRequestVo){
+        fundingService.updateFundingStatus(UpdateFundingStatusRequestDto.from(updateFundingStatusRequestVo));
         return new BaseResponseEntity<>(BaseResponseStatus.SUCCESS);
     }
 
