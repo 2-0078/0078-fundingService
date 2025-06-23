@@ -1,7 +1,8 @@
-package com.pieceofcake.fundingservice.funding.infrastructure.kafka.config;
+package com.pieceofcake.fundingservice.kafka.config;
 
-import com.pieceofcake.fundingservice.funding.infrastructure.kafka.producer.FundingEvent;
-import com.pieceofcake.fundingservice.funding.infrastructure.kafka.producer.RefundEvent;
+import com.pieceofcake.fundingservice.kafka.producer.FundingEvent;
+import com.pieceofcake.fundingservice.kafka.producer.FundingRemainPieceEvent;
+import com.pieceofcake.fundingservice.kafka.producer.RefundEvent;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -50,5 +51,15 @@ public class KafkaConfig {
     @Bean
     public KafkaTemplate<String, RefundEvent> refundKafkaTemplate() {
         return new KafkaTemplate<>(createRefundNotification());
+    }
+
+    @Bean
+    public ProducerFactory<String, FundingRemainPieceEvent> createFundingRemainPiecesNotification() {
+        return new DefaultKafkaProducerFactory<>(productProducerConfigs());
+    }
+
+    @Bean
+    public KafkaTemplate<String, FundingRemainPieceEvent> fundingKafkaTemplate() {
+        return new KafkaTemplate<>(createFundingRemainPiecesNotification());
     }
 }

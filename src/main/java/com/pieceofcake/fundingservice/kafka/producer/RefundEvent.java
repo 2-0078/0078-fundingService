@@ -1,9 +1,7 @@
-package com.pieceofcake.fundingservice.funding.infrastructure.kafka.producer;
+package com.pieceofcake.fundingservice.kafka.producer;
 
 import lombok.*;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 @Getter
 @Setter
 @NoArgsConstructor

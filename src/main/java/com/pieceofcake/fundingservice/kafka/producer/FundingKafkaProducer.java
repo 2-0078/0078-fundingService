@@ -1,4 +1,4 @@
-package com.pieceofcake.fundingservice.funding.infrastructure.kafka.producer;
+package com.pieceofcake.fundingservice.kafka.producer;
 
 import org.springframework.kafka.support.SendResult;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +14,7 @@ import java.util.concurrent.CompletableFuture;
 public class FundingKafkaProducer {
     private final KafkaTemplate<String, FundingEvent> kafkaTemplate;
     private final KafkaTemplate<String, RefundEvent> refundKafkaTemplate;
+    private final KafkaTemplate<String, FundingRemainPieceEvent> fundingKafkaTemplate;
 
     public void sendCreateFundingEvent(FundingEvent fundingEvent) {
         log.info("sendFundingEvent: {}", fundingEvent);
@@ -31,5 +32,11 @@ public class FundingKafkaProducer {
         log.info("sendRefundEvent: {}", refundEvent);
         CompletableFuture<SendResult<String, RefundEvent>> future
                 = refundKafkaTemplate.send("refund-funding", refundEvent);
+    }
+
+    public void sendFundingRemainPieceEvent(FundingRemainPieceEvent remainPieceEvent) {
+        log.info("sendFundingRemainPieceEvent: {}", remainPieceEvent);
+        CompletableFuture<SendResult<String, FundingRemainPieceEvent>> future
+                = fundingKafkaTemplate.send("remain-funding",remainPieceEvent);
     }
 }
