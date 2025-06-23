@@ -3,9 +3,6 @@ package com.pieceofcake.fundingservice.funding.application;
 import com.pieceofcake.fundingservice.funding.dto.in.*;
 import com.pieceofcake.fundingservice.funding.dto.out.GetFundingResponseDto;
 import com.pieceofcake.fundingservice.funding.dto.out.GetWishFundingResponseDto;
-import com.pieceofcake.fundingservice.participation.dto.in.CancelParticipateFundingRequestDto;
-import com.pieceofcake.fundingservice.participation.dto.in.ParticipateFundingRequestDto;
-
 import java.util.List;
 
 public interface FundingService {
@@ -14,7 +11,7 @@ public interface FundingService {
     GetFundingResponseDto getFunding(String fundingUuid);
     void createFunding(CreateFundingRequestDto createFundingRequestDto);
     void updateFunding(UpdateFundingRequestDto updateFundingRequestDto);
-    void updateFundingStatus(UpdateFundingRequestDto updateFundingRequestDto);
+    void updateFundingStatus(UpdateFundingStatusRequestDto updateFundingStatusRequestDto);
     void deleteFunding(String fundingUuid);
 //    void participateFunding(ParticipateFundingRequestDto fundingJoinRequestDto);
 //    void cancelFunding(CancelParticipateFundingRequestDto cancelDto);
