@@ -5,6 +5,12 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
 
+  data:
+    redis:
+      host: ${EC2_DB}
+      port: 6379
+      password: ${REDIS_PASSWORD}
+
   kafka:
     bootstrap-servers: ${EC2_HOST}:10000,${EC2_HOST}:10001,${EC2_HOST}:10002
     producer:

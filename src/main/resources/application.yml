@@ -12,11 +12,6 @@ spring:
     job:
       enabled: false
 
-  redis:
-    data:
-      host: localhost
-      port: 6379
-
   jpa:
     hibernate:
       ddl-auto: update
