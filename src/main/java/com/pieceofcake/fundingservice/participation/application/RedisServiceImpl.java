@@ -96,7 +96,7 @@ public class RedisServiceImpl implements RedisService {
             List<String> args = Collections.singletonList(String.valueOf(quantity));
 
             DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>();
-            redisScript.setLocation(new ClassPathResource("scripts/join.lua"));
+            redisScript.setLocation(new ClassPathResource("scripts/cancel.lua"));
             redisScript.setResultType(Long.class);
 
             return (Long)redisTemplate.execute(redisScript, keys, args.toArray(new String[0])) > 0;
