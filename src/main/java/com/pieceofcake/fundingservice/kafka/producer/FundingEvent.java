@@ -1,4 +1,4 @@
-package com.pieceofcake.fundingservice.funding.infrastructure.kafka.producer;
+package com.pieceofcake.fundingservice.kafka.producer;
 
 import com.pieceofcake.fundingservice.funding.entity.FundingStatus;
 import lombok.*;
