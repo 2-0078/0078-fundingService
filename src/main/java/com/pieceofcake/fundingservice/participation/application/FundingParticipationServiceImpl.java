@@ -40,10 +40,13 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
         long quantity = redisService.decreaseRemainPieces(
                 fundingJoinRequestDto.getFundingUuid(), fundingJoinRequestDto.getQuantity());
         if(quantity == 0){
+            log.info("레디스 조각 부족");
             throw new BaseException((BaseResponseStatus.NO_MORE_PIECES));
         }
         try {
+            log.info("DB 저장");
             participationRepository.save(fundingJoinRequestDto.toEntity((int)quantity));
+            log.info("DB 저장 완료 후 결제");
             //결제
             paymentClient.createMoney(CreatePaymentRequestDto.builder()
                             .amount(getPiecePrice(fundingJoinRequestDto.getFundingUuid()) * fundingJoinRequestDto.getQuantity())
@@ -51,8 +54,10 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
                             .historyType(MoneyHistoryType.FUNDING)
                             .moneyHistoryDetail(fundingJoinRequestDto.getFundingUuid())
                             .build());
+            log.info("DB 저장 완료 후 결제");
         }catch (Exception e){
             redisService.increaseRemainPieces(fundingJoinRequestDto.getFundingUuid(), fundingJoinRequestDto.getQuantity());
+            log.info("레디스 롤백");
             throw new BaseException(BaseResponseStatus.INTERNAL_SERVER_ERROR,e);
         }
     }
