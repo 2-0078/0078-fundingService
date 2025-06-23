@@ -5,6 +5,7 @@ import com.pieceofcake.fundingservice.common.exception.BaseException;
 import com.pieceofcake.fundingservice.funding.dto.in.SetRedisFundingRequestDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
@@ -67,7 +68,6 @@ public class RedisServiceImpl implements RedisService {
     @Override
     public long decreaseRemainPieces(String fundingUuid, int quantity) {
         try {
-            String script = new String(Files.readAllBytes(Paths.get("src/main/resources/scripts/join.lua")));
             String keyPrefix = "funding:" + fundingUuid;
 
             // Redis 키와 인자 설정
@@ -76,11 +76,11 @@ public class RedisServiceImpl implements RedisService {
 
             // Lua 스크립트 실행 처리된 수량 반환
             DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>();
-            redisScript.setScriptText(script);
+            redisScript.setLocation(new ClassPathResource("scripts/join.lua"));
             redisScript.setResultType(Long.class);
 
             return (Long)redisTemplate.execute(redisScript, keys, args.toArray(new String[0]));
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return 0L;
         }
@@ -89,7 +89,6 @@ public class RedisServiceImpl implements RedisService {
     @Override
     public boolean increaseRemainPieces(String fundingUuid, int quantity) {
         try {
-            String script = new String(Files.readAllBytes(Paths.get("src/main/resources/scripts/cancel.lua")));
             String keyPrefix = "funding:" + fundingUuid;
 
             // Redis 키와 인자 설정
@@ -97,12 +96,12 @@ public class RedisServiceImpl implements RedisService {
             List<String> args = Collections.singletonList(String.valueOf(quantity));
 
             DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>();
-            redisScript.setScriptText(script);
+            redisScript.setLocation(new ClassPathResource("scripts/join.lua"));
             redisScript.setResultType(Long.class);
 
             return (Long)redisTemplate.execute(redisScript, keys, args.toArray(new String[0])) > 0;
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return false;
         }
