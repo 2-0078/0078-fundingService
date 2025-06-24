@@ -9,5 +9,5 @@ import lombok.*;
 @Builder
 public class FundingRemainPieceEvent {
     private String fundingUuid;
-    private Integer remainPieces;
+    private Integer remainingPieces;
 }
