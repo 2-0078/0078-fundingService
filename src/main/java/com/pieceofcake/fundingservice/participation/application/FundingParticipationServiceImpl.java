@@ -125,7 +125,7 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
             public void afterCommit() {
                 FundingRemainPieceEvent event = FundingRemainPieceEvent.builder()
                         .fundingUuid(fundingUuid)
-                        .remainPieces(getRemainingPieces(fundingUuid))
+                        .remainingPieces(getRemainingPieces(fundingUuid))
                         .build();
                 fundingKafkaProducer.sendFundingRemainPieceEvent(event);
             }
