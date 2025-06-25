@@ -15,6 +15,7 @@ public class FundingKafkaProducer {
     private final KafkaTemplate<String, FundingEvent> kafkaTemplate;
     private final KafkaTemplate<String, RefundEvent> refundKafkaTemplate;
     private final KafkaTemplate<String, FundingRemainPieceEvent> fundingKafkaTemplate;
+    private final KafkaTemplate<String, CompletedFundingEvent> completedKafkaTemplate;
 
     public void sendCreateFundingEvent(FundingEvent fundingEvent) {
         log.info("sendFundingEvent: {}", fundingEvent);
@@ -38,5 +39,11 @@ public class FundingKafkaProducer {
         log.info("sendFundingRemainPieceEvent: {}", remainPieceEvent);
         CompletableFuture<SendResult<String, FundingRemainPieceEvent>> future
                 = fundingKafkaTemplate.send("remain-funding",remainPieceEvent);
+    }
+
+    public void sendCompleteFundingEvent(CompletedFundingEvent fundingEvent) {
+        log.info("sendCompleteFundingEvent: {}", fundingEvent);
+        CompletableFuture<SendResult<String, CompletedFundingEvent>> future
+                = completedKafkaTemplate.send("complete-funding", fundingEvent);
     }
 }
