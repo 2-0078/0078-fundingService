@@ -7,7 +7,9 @@ import com.pieceofcake.fundingservice.funding.dto.out.GetFundingResponseDto;
 import com.pieceofcake.fundingservice.funding.dto.out.GetWishFundingResponseDto;
 import com.pieceofcake.fundingservice.funding.entity.Funding;
 import com.pieceofcake.fundingservice.funding.entity.FundingStatus;
+import com.pieceofcake.fundingservice.funding.infrastructure.client.BoardClient;
 import com.pieceofcake.fundingservice.funding.infrastructure.client.PieceClient;
+import com.pieceofcake.fundingservice.funding.infrastructure.client.dto.CreateBoardRequestDto;
 import com.pieceofcake.fundingservice.funding.infrastructure.client.dto.CreatePieceRequestDto;
 import com.pieceofcake.fundingservice.kafka.producer.FundingEvent;
 import com.pieceofcake.fundingservice.kafka.producer.FundingKafkaProducer;
@@ -33,6 +35,7 @@ public class FundingServiceImpl implements FundingService {
     private final WishFundingRepository wishFundingRepository;
     private final RedisService redisService;
     private final PieceClient pieceClient;
+    private final BoardClient boardClient;
     private final FundingKafkaProducer fundingKafkaProducer;
 
     /*
@@ -56,6 +59,10 @@ public class FundingServiceImpl implements FundingService {
     @Transactional
     public void createFunding(CreateFundingRequestDto createFundingRequestDto) {
         try {
+
+            //게시판 생성
+            boardClient.createBoard(new CreateBoardRequestDto(createFundingRequestDto.getFundingUuid()));
+
             redisService.setRemainingPieces(
                     SetRedisFundingRequestDto.builder()
                             .fundingUuid(createFundingRequestDto.getFundingUuid())
