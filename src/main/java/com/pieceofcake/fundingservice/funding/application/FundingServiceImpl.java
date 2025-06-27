@@ -19,6 +19,8 @@ import com.pieceofcake.fundingservice.participation.application.RedisService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -37,6 +39,23 @@ public class FundingServiceImpl implements FundingService {
     private final PieceClient pieceClient;
     private final BoardClient boardClient;
     private final FundingKafkaProducer fundingKafkaProducer;
+
+
+    @Override
+    public List<GetFundingResponseDto> getFundingList(FundingStatus status) {
+        return fundingRepository.findByFundingStatus(status).stream().map(GetFundingResponseDto::from).toList();
+    }
+
+    @Override
+    public Page<GetFundingResponseDto> getFundingListWithPaging(FundingStatus status, Pageable pageable) {
+        Page<Funding> fundingPage;
+        if (status != null) {
+            fundingPage = fundingRepository.findByFundingStatus(status, pageable);
+        } else {
+            fundingPage = fundingRepository.findAll(pageable);
+        }
+        return fundingPage.map(GetFundingResponseDto::from);
+    }
 
     /*
     * 상품명, 카테고리, (최신/가격/남은조각 수) 정렬

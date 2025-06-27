@@ -3,13 +3,18 @@ package com.pieceofcake.fundingservice.funding.application;
 import com.pieceofcake.fundingservice.funding.dto.in.*;
 import com.pieceofcake.fundingservice.funding.dto.out.GetFundingResponseDto;
 import com.pieceofcake.fundingservice.funding.dto.out.GetWishFundingResponseDto;
+import com.pieceofcake.fundingservice.funding.entity.FundingStatus;
 import com.pieceofcake.fundingservice.participation.dto.in.CancelParticipateFundingRequestDto;
 import com.pieceofcake.fundingservice.participation.dto.in.ParticipateFundingRequestDto;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
 public interface FundingService {
     //admin
+    List<GetFundingResponseDto> getFundingList(FundingStatus status);
+    Page<GetFundingResponseDto> getFundingListWithPaging(FundingStatus status, Pageable pageable);
     List<String> getFundingUuidList();
     GetFundingResponseDto getFunding(String fundingUuid);
     void createFunding(CreateFundingRequestDto createFundingRequestDto);
