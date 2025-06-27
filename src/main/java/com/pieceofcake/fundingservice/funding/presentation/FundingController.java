@@ -4,7 +4,9 @@ import com.pieceofcake.fundingservice.funding.application.FundingService;
 import com.pieceofcake.fundingservice.common.entity.BaseResponseEntity;
 import com.pieceofcake.fundingservice.common.entity.BaseResponseStatus;
 import com.pieceofcake.fundingservice.funding.dto.in.*;
+import com.pieceofcake.fundingservice.funding.dto.out.GetFundingResponseDto;
 import com.pieceofcake.fundingservice.funding.dto.out.GetWishFundingResponseDto;
+import com.pieceofcake.fundingservice.funding.entity.FundingStatus;
 import com.pieceofcake.fundingservice.funding.vo.in.CreateFundingRequestVo;
 import com.pieceofcake.fundingservice.funding.vo.in.CreateWishFundingRequestVo;
 import com.pieceofcake.fundingservice.funding.vo.in.UpdateFundingRequestVo;
@@ -13,6 +15,9 @@ import com.pieceofcake.fundingservice.funding.vo.out.GetFundingResponseVo;
 import com.pieceofcake.fundingservice.funding.vo.out.GetWishFundingResponseVo;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,18 +29,38 @@ public class FundingController {
 
     private final FundingService fundingService;
 
-//    @Operation(summary = "공모 리스트 조회")
-//    @GetMapping
-//    public BaseResponseEntity<List<GetFundingResponseVo>> getFundingList(){
-////        return new BaseResponseEntity<>(fundingService.getFundingList().stream().map(GetFundingResponseDto::toVo).toList());
-//        return null;
-//    }
-//
-//    @Operation(summary = "공모 UUID 리스트 조회")
-//    @GetMapping("/list")
-//    public BaseResponseEntity<List<String>> getFundingUuidList(){
-//        return new BaseResponseEntity<>(fundingService.getFundingUuidList());
-//    }
+    @Operation(summary = "공모 리스트 조회")
+    @GetMapping("/all/{status}")
+    public BaseResponseEntity<Page<GetFundingResponseVo>> getFundingList(
+            @PathVariable(required = false) FundingStatus status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "30") int size) {
+        
+        Pageable pageable = PageRequest.of(page, size);
+        Page<GetFundingResponseDto> fundingPage = fundingService.getFundingListWithPaging(status, pageable);
+        Page<GetFundingResponseVo> responsePage = fundingPage.map(GetFundingResponseDto::toVo);
+        
+        return new BaseResponseEntity<>(responsePage);
+    }
+
+    @Operation(summary = "전체 공모 리스트 조회")
+    @GetMapping("/all")
+    public BaseResponseEntity<Page<GetFundingResponseVo>> getAllFundingList(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "30") int size) {
+        
+        Pageable pageable = PageRequest.of(page, size);
+        Page<GetFundingResponseDto> fundingPage = fundingService.getFundingListWithPaging(null, pageable);
+        Page<GetFundingResponseVo> responsePage = fundingPage.map(GetFundingResponseDto::toVo);
+        
+        return new BaseResponseEntity<>(responsePage);
+    }
+
+    @Operation(summary = "공모 UUID 리스트 조회")
+    @GetMapping("/list")
+    public BaseResponseEntity<List<String>> getFundingUuidList(){
+        return new BaseResponseEntity<>(fundingService.getFundingUuidList());
+    }
 
     @Operation(summary = "공모 상세 조회")
     @GetMapping("/{fundingUuid}")
