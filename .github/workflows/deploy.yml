@@ -42,6 +42,8 @@ jobs:
           echo "SPRING_DATASOURCE_PASSWORD=${{ secrets.SPRING_DATASOURCE_PASSWORD }}" >> .env
           
           echo "EC2_DB=${{ secrets.EC2_DB }}" >> .env
+          echo "REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}" >> .env
+          echo "EC2_HOST2=${{ secrets.EC2_HOST2 }}" >> .env
 
 
       - name: Build and Push Docker Image to Docker Hub

@@ -3,9 +3,10 @@ package com.pieceofcake.fundingservice.batch.application.config;
 import com.pieceofcake.fundingservice.batch.dto.FundingRefundDto;
 import com.pieceofcake.fundingservice.funding.entity.Funding;
 import com.pieceofcake.fundingservice.funding.entity.FundingStatus;
-import com.pieceofcake.fundingservice.funding.infrastructure.kafka.producer.FundingEvent;
-import com.pieceofcake.fundingservice.funding.infrastructure.kafka.producer.FundingKafkaProducer;
-import com.pieceofcake.fundingservice.funding.infrastructure.kafka.producer.RefundEvent;
+import com.pieceofcake.fundingservice.kafka.producer.CompletedFundingEvent;
+import com.pieceofcake.fundingservice.kafka.producer.FundingEvent;
+import com.pieceofcake.fundingservice.kafka.producer.FundingKafkaProducer;
+import com.pieceofcake.fundingservice.kafka.producer.RefundEvent;
 import com.pieceofcake.fundingservice.funding.infrastructure.repository.FundingRepository;
 import com.pieceofcake.fundingservice.participation.application.RedisService;
 import com.pieceofcake.fundingservice.participation.entity.FundingParticipation;
@@ -151,6 +152,19 @@ public class FundingCloseConfig {
                     fundingKafkaProducer.sendCreateFundingEvent(event);
                 }
             });
+            //완료 처리 된 공모 이벤트 전달
+            if(item.getFundingStatus() == FundingStatus.COMPLETED) {
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        CompletedFundingEvent event = CompletedFundingEvent.builder()
+                                .fundingUuid(item.getFundingUuid())
+                                .piecePrice(item.getPiecePrice())
+                                .build();
+                        fundingKafkaProducer.sendCompleteFundingEvent(event);
+                    }
+                });
+            }
             return item;
         };
     }

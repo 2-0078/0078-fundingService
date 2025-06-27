@@ -11,8 +11,8 @@ import com.pieceofcake.fundingservice.funding.infrastructure.client.BoardClient;
 import com.pieceofcake.fundingservice.funding.infrastructure.client.PieceClient;
 import com.pieceofcake.fundingservice.funding.infrastructure.client.dto.CreateBoardRequestDto;
 import com.pieceofcake.fundingservice.funding.infrastructure.client.dto.CreatePieceRequestDto;
-import com.pieceofcake.fundingservice.funding.infrastructure.kafka.producer.FundingEvent;
-import com.pieceofcake.fundingservice.funding.infrastructure.kafka.producer.FundingKafkaProducer;
+import com.pieceofcake.fundingservice.kafka.producer.FundingEvent;
+import com.pieceofcake.fundingservice.kafka.producer.FundingKafkaProducer;
 import com.pieceofcake.fundingservice.funding.infrastructure.repository.FundingRepository;
 import com.pieceofcake.fundingservice.funding.infrastructure.repository.WishFundingRepository;
 import com.pieceofcake.fundingservice.participation.application.RedisService;
@@ -130,13 +130,13 @@ public class FundingServiceImpl implements FundingService {
 
     @Override
     @Transactional
-    public void updateFundingStatus(UpdateFundingRequestDto updateFundingRequestDto) {
-        Funding entity = fundingRepository.findByFundingUuid(updateFundingRequestDto.getFundingUuid())
+    public void updateFundingStatus(UpdateFundingStatusRequestDto updateFundingStatusRequestDto) {
+        Funding entity = fundingRepository.findByFundingUuid(updateFundingStatusRequestDto.getFundingUuid())
                 .orElseThrow(() -> new BaseException(BaseResponseStatus.NO_EXIST_FUNDING));
 
         FundingStatus current = entity.getFundingStatus();
-        FundingStatus target = updateFundingRequestDto.getFundingStatus();
-        if ((current == FundingStatus.READY && target == FundingStatus.FUNDING) ||
+        FundingStatus target = updateFundingStatusRequestDto.getFundingStatus();
+        if ((current == FundingStatus.READY && ( target == FundingStatus.READY || target == FundingStatus.FUNDING)) ||
                 (current == FundingStatus.FUNDING && (target == FundingStatus.COMPLETED || target == FundingStatus.CANCELLED))) {
             entity.updateFundingStatus(target);
         } else {
@@ -144,7 +144,7 @@ public class FundingServiceImpl implements FundingService {
         }
 
         //조각 발행
-        if(updateFundingRequestDto.getFundingStatus() == FundingStatus.FUNDING){
+        if(updateFundingStatusRequestDto.getFundingStatus() == FundingStatus.FUNDING){
             createPieces(entity.getProductUuid(), entity.getTotalPieces());
         }
 

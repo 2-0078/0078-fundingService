@@ -14,9 +14,9 @@ public class FeignConfig  implements RequestInterceptor {
 
         if (attributes != null) {
             HttpServletRequest request = attributes.getRequest();
-            String memberUuid = request.getHeader("X-Member-Uuid");
-            if (memberUuid != null) {
-                requestTemplate.header("X-Member-Uuid", memberUuid);
+            String token = request.getHeader("Authorization");
+            if (token != null && !token.isEmpty()) {
+                requestTemplate.header("Authorization", token);
             }
         }
     }

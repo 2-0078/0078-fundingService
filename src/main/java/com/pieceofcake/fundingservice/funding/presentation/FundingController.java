@@ -10,6 +10,7 @@ import com.pieceofcake.fundingservice.funding.entity.FundingStatus;
 import com.pieceofcake.fundingservice.funding.vo.in.CreateFundingRequestVo;
 import com.pieceofcake.fundingservice.funding.vo.in.CreateWishFundingRequestVo;
 import com.pieceofcake.fundingservice.funding.vo.in.UpdateFundingRequestVo;
+import com.pieceofcake.fundingservice.funding.vo.in.UpdateFundingStatusRequestVo;
 import com.pieceofcake.fundingservice.funding.vo.out.GetFundingResponseVo;
 import com.pieceofcake.fundingservice.funding.vo.out.GetWishFundingResponseVo;
 import io.swagger.v3.oas.annotations.Operation;
@@ -92,8 +93,8 @@ public class FundingController {
     @PutMapping("/status")
     public BaseResponseEntity<Void> updateFundingStatus(
             @RequestHeader(value = "X-Member-Uuid") String memberUuid,
-            @RequestBody UpdateFundingRequestVo updateFundingRequestVo){
-        fundingService.updateFundingStatus(UpdateFundingRequestDto.from(updateFundingRequestVo));
+            @RequestBody UpdateFundingStatusRequestVo updateFundingStatusRequestVo){
+        fundingService.updateFundingStatus(UpdateFundingStatusRequestDto.from(updateFundingStatusRequestVo));
         return new BaseResponseEntity<>(BaseResponseStatus.SUCCESS);
     }
 

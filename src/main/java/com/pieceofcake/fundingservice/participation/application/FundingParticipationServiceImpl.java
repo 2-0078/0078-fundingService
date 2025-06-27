@@ -1,12 +1,9 @@
 package com.pieceofcake.fundingservice.participation.application;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.pieceofcake.fundingservice.common.entity.BaseResponseEntity;
 import com.pieceofcake.fundingservice.common.entity.BaseResponseStatus;
 import com.pieceofcake.fundingservice.common.exception.BaseException;
-import com.pieceofcake.fundingservice.participation.dto.in.CancelParticipateFundingRequestDto;
+import com.pieceofcake.fundingservice.kafka.producer.FundingKafkaProducer;
+import com.pieceofcake.fundingservice.kafka.producer.FundingRemainPieceEvent;
 import com.pieceofcake.fundingservice.participation.dto.in.ParticipateFundingRequestDto;
 import com.pieceofcake.fundingservice.participation.dto.out.GetParticipateFundingResponseDto;
 import com.pieceofcake.fundingservice.participation.entity.ParticipateStatus;
@@ -15,14 +12,12 @@ import com.pieceofcake.fundingservice.participation.entity.FundingParticipation;
 import com.pieceofcake.fundingservice.participation.infrastructure.client.PaymentClient;
 import com.pieceofcake.fundingservice.participation.infrastructure.client.dto.CreatePaymentRequestDto;
 import com.pieceofcake.fundingservice.participation.infrastructure.client.dto.MoneyHistoryType;
-import feign.FeignException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.Optional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -30,6 +25,7 @@ import java.util.Optional;
 public class FundingParticipationServiceImpl implements FundingParticipationService {
 
     private final FundingParticipationRepository participationRepository;
+    private final FundingKafkaProducer fundingKafkaProducer;
     private final RedisService redisService;
     private final PaymentClient paymentClient;
 
@@ -51,6 +47,8 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
                             .historyType(MoneyHistoryType.FUNDING)
                             .moneyHistoryDetail(fundingJoinRequestDto.getFundingUuid())
                             .build());
+            //read 남은 조각 update 이벤트 발행
+            createRemainPieceEvent(fundingJoinRequestDto.getFundingUuid());
         }catch (Exception e){
             redisService.increaseRemainPieces(fundingJoinRequestDto.getFundingUuid(), fundingJoinRequestDto.getQuantity());
             throw new BaseException(BaseResponseStatus.INTERNAL_SERVER_ERROR,e);
@@ -76,6 +74,9 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
                     .historyType(MoneyHistoryType.REFUND)
                     .moneyHistoryDetail(cancelDto.getFundingUuid()+"- 공모 취소")
                     .build());
+
+            //read 남은 조각 update 이벤트 발행
+            createRemainPieceEvent(cancelDto.getFundingUuid());
         }catch (Exception e){
             redisService.increaseRemainPieces(cancelDto.getFundingUuid(), totalQuantity);
             throw new BaseException(BaseResponseStatus.INTERNAL_SERVER_ERROR,e);
@@ -116,5 +117,18 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
 
     private long getPiecePrice(String fundingUuid) {
         return redisService.getPiecePrice(fundingUuid);
+    }
+
+    private void createRemainPieceEvent(String fundingUuid) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                FundingRemainPieceEvent event = FundingRemainPieceEvent.builder()
+                        .fundingUuid(fundingUuid)
+                        .remainingPieces(getRemainingPieces(fundingUuid))
+                        .build();
+                fundingKafkaProducer.sendFundingRemainPieceEvent(event);
+            }
+        });
     }
 }

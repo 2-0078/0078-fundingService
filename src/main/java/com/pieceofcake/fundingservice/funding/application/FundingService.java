@@ -19,7 +19,7 @@ public interface FundingService {
     GetFundingResponseDto getFunding(String fundingUuid);
     void createFunding(CreateFundingRequestDto createFundingRequestDto);
     void updateFunding(UpdateFundingRequestDto updateFundingRequestDto);
-    void updateFundingStatus(UpdateFundingRequestDto updateFundingRequestDto);
+    void updateFundingStatus(UpdateFundingStatusRequestDto updateFundingStatusRequestDto);
     void deleteFunding(String fundingUuid);
 //    void participateFunding(ParticipateFundingRequestDto fundingJoinRequestDto);
 //    void cancelFunding(CancelParticipateFundingRequestDto cancelDto);
