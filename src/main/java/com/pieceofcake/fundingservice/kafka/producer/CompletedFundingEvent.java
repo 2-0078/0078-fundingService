@@ -9,5 +9,8 @@ import lombok.*;
 @Builder
 public class CompletedFundingEvent {
     private String fundingUuid;
+    private String productUuid;
     private Long piecePrice;
+    private Integer totalPieces;
+    private Boolean isTrading;
 }
