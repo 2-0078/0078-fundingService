@@ -2,6 +2,9 @@ package com.pieceofcake.fundingservice.participation.application;
 
 import com.pieceofcake.fundingservice.common.entity.BaseResponseStatus;
 import com.pieceofcake.fundingservice.common.exception.BaseException;
+import com.pieceofcake.fundingservice.funding.infrastructure.client.PieceClient;
+import com.pieceofcake.fundingservice.funding.infrastructure.client.dto.DistributePieceRequestDto;
+import com.pieceofcake.fundingservice.funding.infrastructure.repository.FundingRepository;
 import com.pieceofcake.fundingservice.kafka.producer.FundingKafkaProducer;
 import com.pieceofcake.fundingservice.kafka.producer.FundingRemainPieceEvent;
 import com.pieceofcake.fundingservice.participation.dto.in.ParticipateFundingRequestDto;
@@ -25,13 +28,17 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 public class FundingParticipationServiceImpl implements FundingParticipationService {
 
     private final FundingParticipationRepository participationRepository;
+    private final FundingRepository fundingRepository;
     private final FundingKafkaProducer fundingKafkaProducer;
     private final RedisService redisService;
     private final PaymentClient paymentClient;
+    private final PieceClient pieceClient;
 
     @Override
     @Transactional
     public void participateFunding(ParticipateFundingRequestDto fundingJoinRequestDto) {
+        //productUuid 조회
+        String productUuid = String.valueOf(fundingRepository.findProductUuidByFundingUuid(fundingJoinRequestDto.getFundingUuid()));
         //레디스에서 처리한 조각 수
         long quantity = redisService.decreaseRemainPieces(
                 fundingJoinRequestDto.getFundingUuid(), fundingJoinRequestDto.getQuantity());
@@ -46,6 +53,12 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
                             .isPositive(false)
                             .historyType(MoneyHistoryType.FUNDING)
                             .moneyHistoryDetail(fundingJoinRequestDto.getFundingUuid())
+                            .build());
+
+            pieceClient.distributePiece(DistributePieceRequestDto.builder()
+                            .productUuid(productUuid)
+                            .pieceQuantity(fundingJoinRequestDto.getQuantity())
+                            .applyStatus(true)
                             .build());
             //read 남은 조각 update 이벤트 발행
             createRemainPieceEvent(fundingJoinRequestDto.getFundingUuid());

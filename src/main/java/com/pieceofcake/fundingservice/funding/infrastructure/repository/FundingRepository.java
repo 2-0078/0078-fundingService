@@ -30,6 +30,9 @@ public interface FundingRepository extends JpaRepository<Funding,Long> {
     @Query("SELECT f FROM Funding f WHERE f.fundingUuid = :uuid")
     Optional<Funding> findByFundingUuidWithLock(@Param("uuid") String uuid);
 
+    @Query("select f.productUuid from Funding f where f.fundingUuid = :fundingUuid")
+    Optional<String> findProductUuidByFundingUuid(@Param("fundingUuid") String fundingUuid);
+
 //    @Modifying
 //    @Query("UPDATE Funding f SET f.fundingStatus = '' f.fundingDeadline <= :now")
 }

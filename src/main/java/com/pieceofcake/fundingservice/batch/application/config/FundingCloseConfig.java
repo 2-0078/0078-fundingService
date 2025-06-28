@@ -159,7 +159,10 @@ public class FundingCloseConfig {
                     public void afterCommit() {
                         CompletedFundingEvent event = CompletedFundingEvent.builder()
                                 .fundingUuid(item.getFundingUuid())
+                                .productUuid(item.getProductUuid())
                                 .piecePrice(item.getPiecePrice())
+                                .totalPieces(item.getTotalPieces())
+                                .isTrading(true)
                                 .build();
                         fundingKafkaProducer.sendCompleteFundingEvent(event);
                     }
