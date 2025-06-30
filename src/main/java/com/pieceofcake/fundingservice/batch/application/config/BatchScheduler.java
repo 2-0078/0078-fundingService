@@ -18,7 +18,7 @@ public class BatchScheduler {
     private final Job dailyFundingJob;
 
     //임시 시간 설정
-    @Scheduled(cron = "0 0/30 * * * *")
+    @Scheduled(cron = "0 0/5 * * * *")
     public void runDailyFundingJob() throws Exception {
         JobParameters jobParameters = new JobParametersBuilder()
                 .addString("time", LocalDateTime.now().toString())
