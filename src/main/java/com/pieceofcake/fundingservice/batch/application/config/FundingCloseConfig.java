@@ -136,22 +136,22 @@ public class FundingCloseConfig {
             }
 
             //상태 변경 카프카
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    FundingEvent event = FundingEvent.builder()
-                            .fundingUuid(item.getFundingUuid())
-                            .productUuid(item.getProductUuid())
-                            .totalPieces(item.getTotalPieces())
-                            .remainingPieces(item.getRemainingPieces())
-                            .piecePrice(item.getPiecePrice())
-                            .fundingAmount(item.getFundingAmount())
-                            .fundingDeadline(item.getFundingDeadline().toString())
-                            .fundingStatus(item.getFundingStatus().toString())
-                            .build();
-                    fundingKafkaProducer.sendCreateFundingEvent(event);
-                }
-            });
+//            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+//                @Override
+//                public void afterCommit() {
+//                    FundingEvent event = FundingEvent.builder()
+//                            .fundingUuid(item.getFundingUuid())
+//                            .productUuid(item.getProductUuid())
+//                            .totalPieces(item.getTotalPieces())
+//                            .remainingPieces(item.getRemainingPieces())
+//                            .piecePrice(item.getPiecePrice())
+//                            .fundingAmount(item.getFundingAmount())
+//                            .fundingDeadline(item.getFundingDeadline().toString())
+//                            .fundingStatus(item.getFundingStatus().toString())
+//                            .build();
+//                    fundingKafkaProducer.sendCreateFundingEvent(event);
+//                }
+//            });
             //완료 처리 된 공모 이벤트 전달
             if(item.getFundingStatus() == FundingStatus.COMPLETED) {
                 TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
