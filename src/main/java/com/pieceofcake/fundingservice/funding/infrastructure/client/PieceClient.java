@@ -7,6 +7,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 @FeignClient(
         name = "piece-service",
@@ -17,5 +18,7 @@ public interface PieceClient {
     void createPieces(@RequestBody CreatePieceRequestDto createPieceRequestDto);
 
     @PutMapping("/piece/distribute")
-    void distributePiece(@RequestBody DistributePieceRequestDto distributePieceRequestDto);
+    void distributePiece(
+            @RequestHeader("X-Member-Uuid") String memberUuid,
+            @RequestBody DistributePieceRequestDto distributePieceRequestDto);
 }

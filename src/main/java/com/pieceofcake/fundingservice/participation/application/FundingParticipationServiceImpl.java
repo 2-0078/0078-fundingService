@@ -64,7 +64,7 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
                             .build());
             log.info("결제 완료");
 
-            pieceClient.distributePiece(DistributePieceRequestDto.builder()
+            pieceClient.distributePiece(fundingJoinRequestDto.getMemberUuid(),DistributePieceRequestDto.builder()
                             .productUuid(productUuid)
                             .pieceQuantity(fundingJoinRequestDto.getQuantity())
                             .applyStatus(true)
