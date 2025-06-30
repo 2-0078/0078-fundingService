@@ -37,16 +37,23 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
     @Override
     @Transactional
     public void participateFunding(ParticipateFundingRequestDto fundingJoinRequestDto) {
+        log.info("공모 참여중");
         //productUuid 조회
         String productUuid = String.valueOf(fundingRepository.findProductUuidByFundingUuid(fundingJoinRequestDto.getFundingUuid()));
+        log.info("productUuid :  {}", productUuid);
+
         //레디스에서 처리한 조각 수
         long quantity = redisService.decreaseRemainPieces(
                 fundingJoinRequestDto.getFundingUuid(), fundingJoinRequestDto.getQuantity());
         if(quantity == 0){
             throw new BaseException((BaseResponseStatus.NO_MORE_PIECES));
         }
+        log.info("quantity :  {}", quantity);
+
         try {
+            log.info("try");
             participationRepository.save(fundingJoinRequestDto.toEntity((int)quantity));
+            log.info("저장 완료");
             //결제
             paymentClient.createMoney(CreatePaymentRequestDto.builder()
                             .amount(getPiecePrice(fundingJoinRequestDto.getFundingUuid()) * fundingJoinRequestDto.getQuantity())
@@ -54,15 +61,20 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
                             .historyType(MoneyHistoryType.FUNDING)
                             .moneyHistoryDetail(fundingJoinRequestDto.getFundingUuid())
                             .build());
+            log.info("결제 완료");
 
             pieceClient.distributePiece(DistributePieceRequestDto.builder()
                             .productUuid(productUuid)
                             .pieceQuantity(fundingJoinRequestDto.getQuantity())
                             .applyStatus(true)
                             .build());
+            log.info("조각 분배 완료");
+
             //read 남은 조각 update 이벤트 발행
             createRemainPieceEvent(fundingJoinRequestDto.getFundingUuid());
+            log.info("남은조각 이벤트 발행 완료");
         }catch (Exception e){
+            log.info("롤백");
             redisService.increaseRemainPieces(fundingJoinRequestDto.getFundingUuid(), fundingJoinRequestDto.getQuantity());
             throw new BaseException(BaseResponseStatus.INTERNAL_SERVER_ERROR,e);
         }
