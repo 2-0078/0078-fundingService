@@ -56,6 +56,7 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
             log.info("저장 완료");
             //결제
             paymentClient.createMoney(CreatePaymentRequestDto.builder()
+                            .memberUuid(fundingJoinRequestDto.getMemberUuid())
                             .amount(getPiecePrice(fundingJoinRequestDto.getFundingUuid()) * fundingJoinRequestDto.getQuantity())
                             .isPositive(false)
                             .historyType(MoneyHistoryType.FUNDING)
