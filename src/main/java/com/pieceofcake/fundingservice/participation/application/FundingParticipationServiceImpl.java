@@ -39,7 +39,7 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
     public void participateFunding(ParticipateFundingRequestDto fundingJoinRequestDto) {
         log.info("공모 참여중");
         //productUuid 조회
-        String productUuid = String.valueOf(fundingRepository.findProductUuidByFundingUuid(fundingJoinRequestDto.getFundingUuid()));
+        String productUuid = fundingRepository.findProductUuidByFundingUuid(fundingJoinRequestDto.getFundingUuid()).orElseThrow();
         log.info("productUuid :  {}", productUuid);
 
         //레디스에서 처리한 조각 수
