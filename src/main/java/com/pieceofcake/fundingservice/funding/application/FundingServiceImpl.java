@@ -7,6 +7,7 @@ import com.pieceofcake.fundingservice.funding.dto.out.GetFundingResponseDto;
 import com.pieceofcake.fundingservice.funding.dto.out.GetWishFundingResponseDto;
 import com.pieceofcake.fundingservice.funding.entity.Funding;
 import com.pieceofcake.fundingservice.funding.entity.FundingStatus;
+import com.pieceofcake.fundingservice.funding.entity.WishFunding;
 import com.pieceofcake.fundingservice.funding.infrastructure.client.BoardClient;
 import com.pieceofcake.fundingservice.funding.infrastructure.client.PieceClient;
 import com.pieceofcake.fundingservice.funding.infrastructure.client.dto.CreateBoardRequestDto;
@@ -26,6 +27,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.List;
+import java.util.Optional;
 
 
 @Slf4j
@@ -186,7 +188,14 @@ public class FundingServiceImpl implements FundingService {
 
     @Override
     public void wishFunding(CreateWishFundingRequestDto createWishFundingRequestDto) {
-        wishFundingRepository.save(createWishFundingRequestDto.toEntity());
+        Optional<WishFunding> optionalWishFunding =
+                wishFundingRepository.getByMemberUuidAndFundingUuid(createWishFundingRequestDto.getMemberUuid(), createWishFundingRequestDto.getFundingUuid());
+
+        if (optionalWishFunding.isPresent()) {
+            wishFundingRepository.delete(optionalWishFunding.get());
+        } else {
+            wishFundingRepository.save(createWishFundingRequestDto.toEntity());
+        }
     }//참여 취소 토글 형태
 
     @Override

@@ -64,12 +64,25 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
                             .build());
             log.info("결제 완료");
 
-            pieceClient.distributePiece(fundingJoinRequestDto.getMemberUuid(),DistributePieceRequestDto.builder()
-                            .productUuid(productUuid)
-                            .pieceQuantity(fundingJoinRequestDto.getQuantity())
-                            .applyStatus(true)
-                            .build());
-            log.info("조각 분배 완료");
+            try{
+                pieceClient.distributePiece(fundingJoinRequestDto.getMemberUuid(),DistributePieceRequestDto.builder()
+                        .productUuid(productUuid)
+                        .pieceQuantity(fundingJoinRequestDto.getQuantity())
+                        .applyStatus(true)
+                        .build());
+                log.info("조각 분배 완료");
+            }catch (Exception e){
+                //환불
+                paymentClient.createMoney(CreatePaymentRequestDto.builder()
+                        .memberUuid(fundingJoinRequestDto.getMemberUuid())
+                        .amount(getPiecePrice(fundingJoinRequestDto.getFundingUuid()) * fundingJoinRequestDto.getQuantity())
+                        .isPositive(true)
+                        .historyType(MoneyHistoryType.REFUND)
+                        .moneyHistoryDetail(fundingJoinRequestDto.getFundingUuid())
+                        .build());
+                log.info("환불 완료");
+            }
+
 
             //read 남은 조각 update 이벤트 발행
             createRemainPieceEvent(fundingJoinRequestDto.getFundingUuid());
