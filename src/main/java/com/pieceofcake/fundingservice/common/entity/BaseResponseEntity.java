@@ -1,7 +1,10 @@
 package com.pieceofcake.fundingservice.common.entity;
 
+import com.pieceofcake.fundingservice.common.exception.FeignClientException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 
 
 public record BaseResponseEntity<T>(HttpStatusCode httpStatus, Boolean isSuccess, String message, int code, T result) {
@@ -38,6 +41,21 @@ public record BaseResponseEntity<T>(HttpStatusCode httpStatus, Boolean isSuccess
 
     public BaseResponseEntity(BaseResponseStatus status, String message) {
         this(status.getHttpStatusCode(), status.isSuccess(), message, status.getCode(), null);
+    }
+
+
+    @ExceptionHandler(FeignClientException.class)
+    public ResponseEntity<BaseResponseEntity<Void>> handleFeignClientException(FeignClientException e) {
+        // 원격 서비스의 응답 정보를 그대로 클라이언트에게 반환
+        BaseResponseEntity<Void> response = new BaseResponseEntity<>(
+                org.springframework.http.HttpStatus.valueOf(e.getStatusCode()),
+                e.isSuccess(),
+                e.getErrorMessage(),
+                e.getErrorCode(),
+                null
+        );
+
+        return ResponseEntity.status(e.getStatusCode()).body(response);
     }
 }
 
