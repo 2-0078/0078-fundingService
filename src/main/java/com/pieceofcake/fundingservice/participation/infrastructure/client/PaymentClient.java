@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
         url = "${EC2_HOST}:8000/payment-service/api/v1",
         configuration = FeignConfig.class)
 public interface PaymentClient {
-    @PostMapping("/money")
+    @PostMapping("/money/with-member-uuid")
     void createMoney(@RequestBody CreatePaymentRequestDto createPaymentRequestDto);
 
 }
