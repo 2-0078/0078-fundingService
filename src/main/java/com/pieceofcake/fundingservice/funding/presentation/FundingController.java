@@ -132,12 +132,12 @@ public class FundingController {
         return new BaseResponseEntity<>(BaseResponseStatus.SUCCESS);
     }
 
-    @Operation(summary = "공모 찜 취소하기")
-    @DeleteMapping("/wish/{id}")
-    public BaseResponseEntity<Void> cancelWishFunding(
-            @RequestHeader(value = "X-Member-Uuid") String memberUuid,
-            @PathVariable Long id){
-        fundingService.cancelWishFunding(id);
-        return new BaseResponseEntity<>(BaseResponseStatus.SUCCESS);
-    }
+//    @Operation(summary = "공모 찜 취소하기")
+//    @DeleteMapping("/wish/{id}")
+//    public BaseResponseEntity<Void> cancelWishFunding(
+//            @RequestHeader(value = "X-Member-Uuid") String memberUuid,
+//            @PathVariable Long id){
+//        fundingService.cancelWishFunding(id);
+//        return new BaseResponseEntity<>(BaseResponseStatus.SUCCESS);
+//    }
 }
