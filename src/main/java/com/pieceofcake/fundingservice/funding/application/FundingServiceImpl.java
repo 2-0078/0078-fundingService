@@ -12,6 +12,9 @@ import com.pieceofcake.fundingservice.funding.infrastructure.client.BoardClient;
 import com.pieceofcake.fundingservice.funding.infrastructure.client.PieceClient;
 import com.pieceofcake.fundingservice.funding.infrastructure.client.dto.CreateBoardRequestDto;
 import com.pieceofcake.fundingservice.funding.infrastructure.client.dto.CreatePieceRequestDto;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pieceofcake.fundingservice.common.application.OutboxService;
 import com.pieceofcake.fundingservice.kafka.producer.FundingEvent;
 import com.pieceofcake.fundingservice.kafka.producer.FundingKafkaProducer;
 import com.pieceofcake.fundingservice.funding.infrastructure.repository.FundingRepository;
@@ -41,6 +44,8 @@ public class FundingServiceImpl implements FundingService {
     private final PieceClient pieceClient;
     private final BoardClient boardClient;
     private final FundingKafkaProducer fundingKafkaProducer;
+    private final OutboxService outboxService;
+    private final ObjectMapper objectMapper;
 
 
     @Override
@@ -79,11 +84,18 @@ public class FundingServiceImpl implements FundingService {
     @Override
     @Transactional
     public void createFunding(CreateFundingRequestDto createFundingRequestDto) {
+        log.info("Creating funding: fundingUuid={}, productUuid={}, totalPieces={}", 
+                createFundingRequestDto.getFundingUuid(), 
+                createFundingRequestDto.getProductUuid(), 
+                createFundingRequestDto.getTotalPieces());
+        
         try {
-
-            //게시판 생성
+            // 1. 게시판 생성 (외부 서비스 호출)
+            log.debug("Creating board for funding: {}", createFundingRequestDto.getFundingUuid());
             boardClient.createBoard(new CreateBoardRequestDto(createFundingRequestDto.getFundingUuid()));
 
+            // 2. Redis 설정
+            log.debug("Setting Redis data for funding: {}", createFundingRequestDto.getFundingUuid());
             redisService.setRemainingPieces(
                     SetRedisFundingRequestDto.builder()
                             .fundingUuid(createFundingRequestDto.getFundingUuid())
@@ -92,12 +104,20 @@ public class FundingServiceImpl implements FundingService {
                             .piecePrice(createFundingRequestDto.getPiecePrice())
                             .build()
             );
+            
+            // 3. DB 저장
+            log.debug("Saving funding to database: {}", createFundingRequestDto.getFundingUuid());
             Funding saved = fundingRepository.save(createFundingRequestDto.toEntity());
 
-            //카프카 이벤트 발행
-            createFundingEvent(saved);
-        }catch (Exception e){
-            throw new BaseException(BaseResponseStatus.INTERNAL_SERVER_ERROR,e);
+            // 4. Outbox 패턴으로 이벤트 저장 (트랜잭션 내에서)
+            log.debug("Saving funding event to outbox: {}", saved.getFundingUuid());
+            saveFundingEventToOutbox(saved, "FUNDING_CREATED");
+            
+            log.info("Funding created successfully: fundingUuid={}", saved.getFundingUuid());
+        } catch (Exception e) {
+            log.error("Failed to create funding: fundingUuid={}, error={}", 
+                    createFundingRequestDto.getFundingUuid(), e.getMessage(), e);
+            throw new BaseException(BaseResponseStatus.INTERNAL_SERVER_ERROR, e);
         }
     }
 
@@ -125,8 +145,9 @@ public class FundingServiceImpl implements FundingService {
             createPieces(saved.getProductUuid(), saved.getTotalPieces());
         }
 
-        //카프카 이벤트 발행
-        createFundingEvent(saved);
+        // 4. Outbox 패턴으로 이벤트 저장 (트랜잭션 내에서)
+        log.debug("Saving funding event to outbox: {}", saved.getFundingUuid());
+        saveFundingEventToOutbox(saved, "FUNDING_CREATED");
 
     }
 
@@ -150,8 +171,9 @@ public class FundingServiceImpl implements FundingService {
             createPieces(entity.getProductUuid(), entity.getTotalPieces());
         }
 
-        //카프카 이벤트 발행
-        createFundingEvent(entity);
+        // 4. Outbox 패턴으로 이벤트 저장 (트랜잭션 내에서)
+        log.debug("Saving funding event to outbox: {}", entity.getFundingUuid());
+        saveFundingEventToOutbox(entity, "FUNDING_CREATED");
 
     }
 
@@ -211,36 +233,33 @@ public class FundingServiceImpl implements FundingService {
                 .build());
     }
 
-    private void createFundingEvent(Funding entity){
-        //카프카 이벤트 발행
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                FundingEvent event = FundingEvent.builder()
-                        .fundingUuid(entity.getFundingUuid())
-                        .productUuid(entity.getProductUuid())
-                        .totalPieces(entity.getTotalPieces())
-                        .remainingPieces(entity.getRemainingPieces())
-                        .piecePrice(entity.getPiecePrice())
-                        .fundingAmount(entity.getFundingAmount())
-                        .fundingDeadline(entity.getFundingDeadline().toString())
-                        .fundingStatus(entity.getFundingStatus().toString())
-                        .build();
-                fundingKafkaProducer.sendCreateFundingEvent(event);
-            }
-        });
+
+
+    private void saveFundingEventToOutbox(Funding entity, String eventType) {
+        try {
+            FundingEvent event = FundingEvent.builder()
+                    .fundingUuid(entity.getFundingUuid())
+                    .productUuid(entity.getProductUuid())
+                    .totalPieces(entity.getTotalPieces())
+                    .remainingPieces(entity.getRemainingPieces())
+                    .piecePrice(entity.getPiecePrice())
+                    .fundingAmount(entity.getFundingAmount())
+                    .fundingDeadline(entity.getFundingDeadline().toString())
+                    .fundingStatus(entity.getFundingStatus().toString())
+                    .build();
+            
+            String payload = objectMapper.writeValueAsString(event);
+            outboxService.saveEvent(eventType, "FUNDING", entity.getFundingUuid(), payload);
+            
+            log.debug("Event saved to outbox: eventType={}, fundingUuid={}", eventType, entity.getFundingUuid());
+        } catch (JsonProcessingException e) {
+            log.error("Failed to serialize funding event: fundingUuid={}, error={}", 
+                    entity.getFundingUuid(), e.getMessage(), e);
+            throw new RuntimeException("Failed to serialize funding event", e);
+        }
     }
 
     private void deleteFundingEvent(Funding entity){
-        //카프카 이벤트 발행
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                FundingEvent event = FundingEvent.builder()
-                        .productUuid(entity.getProductUuid())
-                        .build();
-                fundingKafkaProducer.sendDeleteFundingEvent(event);
-            }
-        });
+        saveFundingEventToOutbox(entity, "FUNDING_DELETED");
     }
 }

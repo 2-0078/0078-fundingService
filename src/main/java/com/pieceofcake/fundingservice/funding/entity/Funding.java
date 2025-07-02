@@ -46,6 +46,10 @@ public class Funding extends BaseEntity {
     @Column(name = "is_deleted")
     private Boolean isDeleted;
 
+    @Version
+    @Column(name = "version")
+    private Long version;
+
 
     @Builder
     public Funding(
@@ -58,7 +62,8 @@ public class Funding extends BaseEntity {
             Integer remainingPieces,
             LocalDateTime fundingDeadline,
             FundingStatus fundingStatus,
-            Boolean isDeleted
+            Boolean isDeleted,
+            Long version
     ) {
         this.id = id;
         this.fundingUuid = fundingUuid;
@@ -71,6 +76,7 @@ public class Funding extends BaseEntity {
         this.fundingStatus = fundingStatus;
         this.remainingPieces = totalPieces;
         this.fundingDeadline = fundingDeadline;
+        this.version = version;
     }
 
     public void updateFundingStatus(FundingStatus fundingStatus){

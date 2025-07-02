@@ -1,18 +1,18 @@
 spring:
   datasource:
-    url: jdbc:mysql://${EC2_DB}:3306/piece_of_cake
+    url: jdbc:mysql://172.31.2.85:3306/piece_of_cake
     driver-class-name: com.mysql.cj.jdbc.Driver
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
+    username: team_0078
+    password: 00781234!
 
   data:
     redis:
-      host: ${EC2_DB}
+      host: 172.31.2.85
       port: 6379
-      password: ${REDIS_PASSWORD}
+      password: 00781234
 
   kafka:
-    bootstrap-servers: ${EC2_HOST2}:10000,${EC2_HOST2}:10001,${EC2_HOST2}:10002
+    bootstrap-servers: 13.209.170.147:10000,13.209.170.147:10001,13.209.170.147:10002
     producer:
       key-deserializer: org.apache.kafka.common.serialization.StringSerializer
       value-deserializer: org.apache.kafka.common.serialization.StringSerializer

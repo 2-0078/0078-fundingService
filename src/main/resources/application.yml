@@ -3,6 +3,8 @@ server:
   forward-headers-strategy: framework
 
 spring:
+  config:
+    import: optional:file:.env[.properties]
   application:
     name: funding-service
   profiles:
@@ -19,13 +21,21 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+
+# Outbox 패턴 설정
+outbox:
+  max-retries: 3
 
 eureka:
   client:
     register-with-eureka: true
     fetch-registry: true
     service-url:
-      defaultZone: http://${EC2_HOST}:8761/eureka/
+      defaultZone: http://13.125.94.196:8761/eureka/
 
 
 springdoc:

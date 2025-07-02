@@ -5,6 +5,9 @@ import com.pieceofcake.fundingservice.common.exception.BaseException;
 import com.pieceofcake.fundingservice.funding.infrastructure.client.PieceClient;
 import com.pieceofcake.fundingservice.funding.infrastructure.client.dto.DistributePieceRequestDto;
 import com.pieceofcake.fundingservice.funding.infrastructure.repository.FundingRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.pieceofcake.fundingservice.common.application.OutboxService;
 import com.pieceofcake.fundingservice.kafka.producer.FundingKafkaProducer;
 import com.pieceofcake.fundingservice.kafka.producer.FundingRemainPieceEvent;
 import com.pieceofcake.fundingservice.participation.dto.in.ParticipateFundingRequestDto;
@@ -33,64 +36,80 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
     private final RedisService redisService;
     private final PaymentClient paymentClient;
     private final PieceClient pieceClient;
+    private final OutboxService outboxService;
+    private final ObjectMapper objectMapper;
 
     @Override
     @Transactional
     public void participateFunding(ParticipateFundingRequestDto fundingJoinRequestDto) {
-        log.info("공모 참여중");
-        //productUuid 조회
-        String productUuid = fundingRepository.findProductUuidByFundingUuid(fundingJoinRequestDto.getFundingUuid()).orElseThrow();
-        log.info("productUuid :  {}", productUuid);
+        log.info("Funding participation started: fundingUuid={}, memberUuid={}, quantity={}", 
+                fundingJoinRequestDto.getFundingUuid(), 
+                fundingJoinRequestDto.getMemberUuid(), 
+                fundingJoinRequestDto.getQuantity());
+        
+        // 1. productUuid 조회
+        String productUuid = fundingRepository.findProductUuidByFundingUuid(fundingJoinRequestDto.getFundingUuid())
+                .orElseThrow(() -> new BaseException(BaseResponseStatus.NO_EXIST_FUNDING));
+        log.debug("Product UUID retrieved: {}", productUuid);
 
-        //레디스에서 처리한 조각 수
+        // 2. Redis에서 재고 감소 (동시성 제어)
         long quantity = redisService.decreaseRemainPieces(
                 fundingJoinRequestDto.getFundingUuid(), fundingJoinRequestDto.getQuantity());
         if(quantity == 0){
-            throw new BaseException((BaseResponseStatus.NO_MORE_PIECES));
+            log.warn("No more pieces available: fundingUuid={}", fundingJoinRequestDto.getFundingUuid());
+            throw new BaseException(BaseResponseStatus.NO_MORE_PIECES);
         }
-        log.info("quantity :  {}", quantity);
+        log.debug("Remaining pieces after decrease: {}", quantity);
 
         try {
-            log.info("try");
+            // 3. 참여 내역 저장
+            log.debug("Saving participation record");
             participationRepository.save(fundingJoinRequestDto.toEntity((int)quantity));
-            log.info("저장 완료");
-            //결제
+            
+            // 4. 결제 처리
+            long paymentAmount = getPiecePrice(fundingJoinRequestDto.getFundingUuid()) * fundingJoinRequestDto.getQuantity();
+            log.debug("Processing payment: amount={}", paymentAmount);
             paymentClient.createMoney(CreatePaymentRequestDto.builder()
                             .memberUuid(fundingJoinRequestDto.getMemberUuid())
-                            .amount(getPiecePrice(fundingJoinRequestDto.getFundingUuid()) * fundingJoinRequestDto.getQuantity())
+                            .amount(paymentAmount)
                             .isPositive(false)
                             .historyType(MoneyHistoryType.FUNDING)
                             .moneyHistoryDetail(fundingJoinRequestDto.getFundingUuid())
                             .build());
-            log.info("결제 완료");
 
+            // 5. 조각 분배
             try{
+                log.debug("Distributing pieces to member");
                 pieceClient.distributePiece(fundingJoinRequestDto.getMemberUuid(),DistributePieceRequestDto.builder()
                         .productUuid(productUuid)
                         .pieceQuantity(fundingJoinRequestDto.getQuantity())
                         .applyStatus(true)
                         .build());
-                log.info("조각 분배 완료");
             }catch (Exception e){
-                //환불
+                log.error("Failed to distribute pieces, initiating refund: memberUuid={}, error={}", 
+                        fundingJoinRequestDto.getMemberUuid(), e.getMessage(), e);
+                // 조각 분배 실패 시 환불
                 paymentClient.createMoney(CreatePaymentRequestDto.builder()
                         .memberUuid(fundingJoinRequestDto.getMemberUuid())
-                        .amount(getPiecePrice(fundingJoinRequestDto.getFundingUuid()) * fundingJoinRequestDto.getQuantity())
+                        .amount(paymentAmount)
                         .isPositive(true)
                         .historyType(MoneyHistoryType.REFUND)
                         .moneyHistoryDetail(fundingJoinRequestDto.getFundingUuid())
                         .build());
-                log.info("환불 완료");
             }
 
-
-            //read 남은 조각 update 이벤트 발행
-            createRemainPieceEvent(fundingJoinRequestDto.getFundingUuid());
-            log.info("남은조각 이벤트 발행 완료");
+            // 6. Outbox 패턴으로 남은 조각 이벤트 저장
+            log.debug("Saving remain piece event to outbox");
+            saveRemainPieceEventToOutbox(fundingJoinRequestDto.getFundingUuid());
+            
+            log.info("Funding participation completed successfully: fundingUuid={}, memberUuid={}", 
+                    fundingJoinRequestDto.getFundingUuid(), fundingJoinRequestDto.getMemberUuid());
         }catch (Exception e){
-            log.info("롤백");
+            log.error("Funding participation failed, rolling back Redis: fundingUuid={}, memberUuid={}, error={}", 
+                    fundingJoinRequestDto.getFundingUuid(), fundingJoinRequestDto.getMemberUuid(), e.getMessage(), e);
+            // 롤백: Redis 재고 복구
             redisService.increaseRemainPieces(fundingJoinRequestDto.getFundingUuid(), fundingJoinRequestDto.getQuantity());
-            throw new BaseException(BaseResponseStatus.INTERNAL_SERVER_ERROR,e);
+            throw new BaseException(BaseResponseStatus.INTERNAL_SERVER_ERROR, e);
         }
     }
 
@@ -114,8 +133,9 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
                     .moneyHistoryDetail(cancelDto.getFundingUuid()+"- 공모 취소")
                     .build());
 
-            //read 남은 조각 update 이벤트 발행
-            createRemainPieceEvent(cancelDto.getFundingUuid());
+            // 6. Outbox 패턴으로 남은 조각 이벤트 저장
+            log.debug("Saving remain piece event to outbox");
+            saveRemainPieceEventToOutbox(cancelDto.getFundingUuid());
         }catch (Exception e){
             redisService.increaseRemainPieces(cancelDto.getFundingUuid(), totalQuantity);
             throw new BaseException(BaseResponseStatus.INTERNAL_SERVER_ERROR,e);
@@ -158,16 +178,21 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
         return redisService.getPiecePrice(fundingUuid);
     }
 
-    private void createRemainPieceEvent(String fundingUuid) {
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                FundingRemainPieceEvent event = FundingRemainPieceEvent.builder()
-                        .fundingUuid(fundingUuid)
-                        .remainingPieces(getRemainingPieces(fundingUuid))
-                        .build();
-                fundingKafkaProducer.sendFundingRemainPieceEvent(event);
-            }
-        });
+    private void saveRemainPieceEventToOutbox(String fundingUuid) {
+        try {
+            FundingRemainPieceEvent event = FundingRemainPieceEvent.builder()
+                    .fundingUuid(fundingUuid)
+                    .remainingPieces(getRemainingPieces(fundingUuid))
+                    .build();
+            
+            String payload = objectMapper.writeValueAsString(event);
+            outboxService.saveEvent("FUNDING_REMAIN_PIECE", "FUNDING", fundingUuid, payload);
+            
+            log.debug("Remain piece event saved to outbox: fundingUuid={}", fundingUuid);
+        } catch (JsonProcessingException e) {
+            log.error("Failed to serialize remain piece event: fundingUuid={}, error={}", 
+                    fundingUuid, e.getMessage(), e);
+            throw new RuntimeException("Failed to serialize remain piece event", e);
+        }
     }
 }
