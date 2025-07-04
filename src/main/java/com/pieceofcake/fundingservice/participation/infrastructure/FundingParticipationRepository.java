@@ -17,7 +17,12 @@ public interface FundingParticipationRepository extends JpaRepository<FundingPar
             "SUM(CASE WHEN f.participateStatus = 'CANCEL' THEN  f.quantity ELSE 0 END) " +
             "FROM FundingParticipation f " +
             "WHERE f.fundingUuid = :fundingUuid AND f.memberUuid = :memberUuid")
-    int getJoinMinusCancelCount(@Param("fundingUuid") String fundingUuid, @Param("memberUuid") String memberUuid);
+    int getJoinMinusCancelCount(@Param("fundingUuid") String fundingUuid,
+                                @Param("memberUuid") String memberUuid);
 
-
+    @Query("SELECT f.memberUuid " +
+            "FROM FundingParticipation f " +
+            "WHERE f.fundingUuid = :fundingUuid AND f.participateStatus = 'JOIN' " +
+            "GROUP BY f.memberUuid")
+    List<String> findFundingParticipationMemberList(@Param("fundingUuid") String  fundingUuid);
 }

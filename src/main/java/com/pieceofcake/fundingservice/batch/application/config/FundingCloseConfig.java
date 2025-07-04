@@ -3,10 +3,7 @@ package com.pieceofcake.fundingservice.batch.application.config;
 import com.pieceofcake.fundingservice.batch.dto.FundingRefundDto;
 import com.pieceofcake.fundingservice.funding.entity.Funding;
 import com.pieceofcake.fundingservice.funding.entity.FundingStatus;
-import com.pieceofcake.fundingservice.kafka.producer.CompletedFundingEvent;
-import com.pieceofcake.fundingservice.kafka.producer.FundingEvent;
-import com.pieceofcake.fundingservice.kafka.producer.FundingKafkaProducer;
-import com.pieceofcake.fundingservice.kafka.producer.RefundEvent;
+import com.pieceofcake.fundingservice.kafka.producer.*;
 import com.pieceofcake.fundingservice.funding.infrastructure.repository.FundingRepository;
 import com.pieceofcake.fundingservice.participation.application.RedisService;
 import com.pieceofcake.fundingservice.participation.entity.FundingParticipation;
@@ -125,7 +122,6 @@ public class FundingCloseConfig {
                 .parameterValues(parameters)
                 .build();
     }
-
     @Bean
     public ItemProcessor<Funding, Funding> fundingCloseItemProcessor() {
         return item -> {
@@ -135,39 +131,8 @@ public class FundingCloseConfig {
                 item.updateFundingStatus(FundingStatus.CANCELLED);
             }
 
-            //상태 변경 카프카
-//            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-//                @Override
-//                public void afterCommit() {
-//                    FundingEvent event = FundingEvent.builder()
-//                            .fundingUuid(item.getFundingUuid())
-//                            .productUuid(item.getProductUuid())
-//                            .totalPieces(item.getTotalPieces())
-//                            .remainingPieces(item.getRemainingPieces())
-//                            .piecePrice(item.getPiecePrice())
-//                            .fundingAmount(item.getFundingAmount())
-//                            .fundingDeadline(item.getFundingDeadline().toString())
-//                            .fundingStatus(item.getFundingStatus().toString())
-//                            .build();
-//                    fundingKafkaProducer.sendCreateFundingEvent(event);
-//                }
-//            });
-            //완료 처리 된 공모 이벤트 전달
-            if(item.getFundingStatus() == FundingStatus.COMPLETED) {
-                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                    @Override
-                    public void afterCommit() {
-                        CompletedFundingEvent event = CompletedFundingEvent.builder()
-                                .fundingUuid(item.getFundingUuid())
-                                .productUuid(item.getProductUuid())
-                                .piecePrice(item.getPiecePrice())
-                                .totalPieces(item.getTotalPieces())
-                                .isTrading(true)
-                                .build();
-                        fundingKafkaProducer.sendCompleteFundingEvent(event);
-                    }
-                });
-            }
+            registerFundingEventAfterCommit(item);
+
             return item;
         };
     }
@@ -260,6 +225,10 @@ public class FundingCloseConfig {
                     fundingKafkaProducer.sendRefundEvent(event);
                 }
             });
+
+            //kafka evnet -> 알림 서비스
+
+
             return item.toParticipateFundingRequestDto().toEntity();
         };
     }
@@ -267,5 +236,38 @@ public class FundingCloseConfig {
     @Bean
     public ItemWriter<FundingParticipation> refundParticipationItemWriter() {
         return participationRepository::saveAll;
+    }
+
+
+
+
+    private void registerFundingEventAfterCommit(Funding item) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) return;
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                if (item.getFundingStatus() == FundingStatus.COMPLETED) {
+                    CompletedFundingEvent event = CompletedFundingEvent.builder()
+                            .fundingUuid(item.getFundingUuid())
+                            .productUuid(item.getProductUuid())
+                            .piecePrice(item.getPiecePrice())
+                            .totalPieces(item.getTotalPieces())
+                            .isTrading(true)
+                            .build();
+                    fundingKafkaProducer.sendCompleteFundingEvent(event);
+                }
+
+                participationRepository.findFundingParticipationMemberList(item.getFundingUuid())
+                        .forEach(participant -> {
+                            AlertEvent event = AlertEvent.builder()
+                                    .Key(item.getFundingUuid())
+                                    .memberUuid(participant)
+                                    .message("신청한 공모가 " + item.getFundingStatus().toString() + " 되었습니다.")
+                                    .build();
+                            fundingKafkaProducer.sendClosedFundingAlertEvent(event);
+                        });
+            }
+        });
     }
 }
