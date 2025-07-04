@@ -16,6 +16,7 @@ public class FundingKafkaProducer {
     private final KafkaTemplate<String, RefundEvent> refundKafkaTemplate;
     private final KafkaTemplate<String, FundingRemainPieceEvent> fundingKafkaTemplate;
     private final KafkaTemplate<String, CompletedFundingEvent> completedKafkaTemplate;
+    private final KafkaTemplate<String, AlertEvent> alertKafkaTemplate;
 
     public void sendCreateFundingEvent(FundingEvent fundingEvent) {
         log.info("sendFundingEvent: {}", fundingEvent);
@@ -46,4 +47,26 @@ public class FundingKafkaProducer {
         CompletableFuture<SendResult<String, CompletedFundingEvent>> future
                 = completedKafkaTemplate.send("complete-funding", fundingEvent);
     }
+
+    //알람 서비스 - 공모 조각 수 변경(공용)
+    public void sendRemainPiecesAlertEvent(AlertEvent alertEvent) {
+        log.info("sendRemainPiecesAlertEvent: {}", alertEvent);
+        CompletableFuture<SendResult<String, AlertEvent>> future
+                = alertKafkaTemplate.send("update-funding-piece-count-alarm", alertEvent);
+    }
+
+    //알람 서비스 - 공모 시작(FUNDING)
+    public void sendOpenFundingAlertEvent(AlertEvent alertEvent) {
+        log.info("sendOpenFundingAlertEvent: {}", alertEvent);
+        CompletableFuture<SendResult<String, AlertEvent>> future
+                = alertKafkaTemplate.send("start-funding-alarm", alertEvent);
+    }
+
+    //알람 서비스 - 공모 완료 (완료/취소)
+    public void sendClosedFundingAlertEvent(AlertEvent alertEvent) {
+        log.info("sendClosedFundingAlertEvent: {}", alertEvent);
+        CompletableFuture<SendResult<String, AlertEvent>> future
+                = alertKafkaTemplate.send("end-funding-alarm", alertEvent);
+    }
+
 }

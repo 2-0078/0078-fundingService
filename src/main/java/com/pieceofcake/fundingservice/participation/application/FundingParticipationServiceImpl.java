@@ -111,20 +111,23 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
         try{
             //read 남은 조각 update 이벤트 발행
             createRemainPieceEvent(cancelDto.getFundingUuid());
+            log.info("조각 이벤트 발행 완료");
 
             //환불
             paymentClient.createMoney(CreatePaymentRequestDto.builder()
+                    .memberUuid(cancelDto.getMemberUuid())
                     .amount(getPiecePrice(cancelDto.getFundingUuid()) * totalQuantity)
                     .isPositive(true)
                     .historyType(MoneyHistoryType.REFUND)
                     .moneyHistoryDetail(cancelDto.getFundingUuid()+"- 공모 취소")
                     .build());
+            log.info("환불 완료");
 
         }catch (Exception e){
             redisService.decreaseRemainPieces(cancelDto.getFundingUuid(), totalQuantity);
             pieceClient.applyPiece(cancelDto.getMemberUuid(),DistributePieceRequestDto.builder()
                     .productUuid(productUuid)
-                    .pieceQuantity(cancelDto.getQuantity())
+                    .pieceQuantity(totalQuantity)
                     .build());
             throw new BaseException(BaseResponseStatus.CANNOT_CANCEL_PARTICIPATION);
         }
