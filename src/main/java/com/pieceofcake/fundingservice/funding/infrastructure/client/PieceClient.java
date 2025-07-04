@@ -17,8 +17,13 @@ public interface PieceClient {
     @PostMapping("/piece")
     void createPieces(@RequestBody CreatePieceRequestDto createPieceRequestDto);
 
-    @PutMapping("/piece/distribute")
-    void distributePiece(
+    @PutMapping("/piece/apply")
+    void applyPiece(
+            @RequestHeader("X-Member-Uuid") String memberUuid,
+            @RequestBody DistributePieceRequestDto distributePieceRequestDto);
+
+    @PutMapping("/piece/cancel")
+    void cancelPiece(
             @RequestHeader("X-Member-Uuid") String memberUuid,
             @RequestBody DistributePieceRequestDto distributePieceRequestDto);
 }
