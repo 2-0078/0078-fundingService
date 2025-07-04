@@ -40,7 +40,6 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
         log.info("공모 참여중");
         //productUuid 조회
         String productUuid = fundingRepository.findProductUuidByFundingUuid(fundingJoinRequestDto.getFundingUuid()).orElseThrow();
-        log.info("productUuid :  {}", productUuid);
 
         //레디스에서 처리한 조각 수
         long quantity = redisService.decreaseRemainPieces(
@@ -48,10 +47,8 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
         if(quantity == 0){
             throw new BaseException((BaseResponseStatus.NO_MORE_PIECES));
         }
-        log.info("quantity :  {}", quantity);
 
         try {
-            log.info("try");
             participationRepository.save(fundingJoinRequestDto.toEntity((int)quantity));
             log.info("저장 완료");
             //결제
@@ -65,10 +62,9 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
             log.info("결제 완료");
 
             try{
-                pieceClient.distributePiece(fundingJoinRequestDto.getMemberUuid(),DistributePieceRequestDto.builder()
+                pieceClient.applyPiece(fundingJoinRequestDto.getMemberUuid(),DistributePieceRequestDto.builder()
                         .productUuid(productUuid)
                         .pieceQuantity(fundingJoinRequestDto.getQuantity())
-                        .applyStatus(true)
                         .build());
                 log.info("조각 분배 완료");
             }catch (Exception e){
@@ -83,12 +79,10 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
                 log.info("환불 완료");
             }
 
-
             //read 남은 조각 update 이벤트 발행
             createRemainPieceEvent(fundingJoinRequestDto.getFundingUuid());
             log.info("남은조각 이벤트 발행 완료");
         }catch (Exception e){
-            log.info("롤백");
             redisService.increaseRemainPieces(fundingJoinRequestDto.getFundingUuid(), fundingJoinRequestDto.getQuantity());
             throw new BaseException(BaseResponseStatus.INTERNAL_SERVER_ERROR,e);
         }
@@ -97,6 +91,8 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
     @Override
     @Transactional
     public void cancelParticipation(ParticipateFundingRequestDto cancelDto) {
+        //productUuid 조회
+        String productUuid = fundingRepository.findProductUuidByFundingUuid(cancelDto.getFundingUuid()).orElseThrow();
         int totalQuantity = getMyTotalParticipationQuantity(cancelDto);
         if(totalQuantity == 0){
             throw new BaseException(BaseResponseStatus.NO_PARTICIPATION_HISTORY);
@@ -104,8 +100,18 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
         if(!redisService.increaseRemainPieces(cancelDto.getFundingUuid(), totalQuantity)){
             throw new BaseException(BaseResponseStatus.CANNOT_CANCEL_PARTICIPATION);
         }
+
+        participationRepository.save(cancelDto.toEntity(totalQuantity));
+
+        pieceClient.cancelPiece(cancelDto.getMemberUuid(),DistributePieceRequestDto.builder()
+                .productUuid(productUuid)
+                .build());
+        log.info("조각 취소 완료");
+
         try{
-            participationRepository.save(cancelDto.toEntity(totalQuantity));
+            //read 남은 조각 update 이벤트 발행
+            createRemainPieceEvent(cancelDto.getFundingUuid());
+
             //환불
             paymentClient.createMoney(CreatePaymentRequestDto.builder()
                     .amount(getPiecePrice(cancelDto.getFundingUuid()) * totalQuantity)
@@ -114,11 +120,13 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
                     .moneyHistoryDetail(cancelDto.getFundingUuid()+"- 공모 취소")
                     .build());
 
-            //read 남은 조각 update 이벤트 발행
-            createRemainPieceEvent(cancelDto.getFundingUuid());
         }catch (Exception e){
-            redisService.increaseRemainPieces(cancelDto.getFundingUuid(), totalQuantity);
-            throw new BaseException(BaseResponseStatus.INTERNAL_SERVER_ERROR,e);
+            redisService.decreaseRemainPieces(cancelDto.getFundingUuid(), totalQuantity);
+            pieceClient.applyPiece(cancelDto.getMemberUuid(),DistributePieceRequestDto.builder()
+                    .productUuid(productUuid)
+                    .pieceQuantity(cancelDto.getQuantity())
+                    .build());
+            throw new BaseException(BaseResponseStatus.CANNOT_CANCEL_PARTICIPATION);
         }
     }
 
