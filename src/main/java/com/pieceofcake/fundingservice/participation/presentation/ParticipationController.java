@@ -18,7 +18,18 @@ public class ParticipationController {
     private final FundingParticipationService participationService;
 
 
-    @Operation(summary = "(사용자)공모 참여")
+    @Operation(
+        summary = "공모 참여",
+        description = "사용자가 특정 공모에 참여합니다.\n\n입력값: 참여 정보(참여 수량 등)\n\n참여 상태값: [JOIN, CANCEL]",
+        parameters = {
+            @io.swagger.v3.oas.annotations.Parameter(name = "X-Member-Uuid", description = "회원 UUID", in = io.swagger.v3.oas.annotations.enums.ParameterIn.HEADER, required = true)
+        },
+        requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "참여 정보",
+            required = true
+        ),
+        tags = {"Participation"}
+    )
     @PostMapping
     public BaseResponseEntity<Void> participateFunding(
             @RequestHeader(value = "X-Member-Uuid") String memberUuid,
@@ -28,13 +39,20 @@ public class ParticipationController {
         return new BaseResponseEntity<>(BaseResponseStatus.SUCCESS);
     }
 
-    @Operation(summary = "(사용자)공모 취소")
+    @Operation(
+        summary = "공모 참여 취소",
+        description = "사용자가 특정 공모 참여를 취소합니다.\n\n입력값: fundingUuid (path)\n\n참여 상태값: [JOIN, CANCEL]",
+        parameters = {
+            @io.swagger.v3.oas.annotations.Parameter(name = "X-Member-Uuid", description = "회원 UUID", in = io.swagger.v3.oas.annotations.enums.ParameterIn.HEADER, required = true),
+            @io.swagger.v3.oas.annotations.Parameter(name = "fundingUuid", description = "공모 UUID", in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH, required = true)
+        },
+        tags = {"Participation"}
+    )
     @DeleteMapping("/{fundingUuid}")
     public BaseResponseEntity<Void> cancelFunding(
             @RequestHeader(value = "X-Member-Uuid") String memberUuid,
             @PathVariable String fundingUuid
     ){
-//        participationService.cancelParticipation(fundingUuid, memberUuid);
         participationService.cancelParticipation(
                 ParticipateFundingRequestDto.builder()
                         .fundingUuid(fundingUuid)
@@ -45,7 +63,15 @@ public class ParticipationController {
         return new BaseResponseEntity<>(BaseResponseStatus.SUCCESS);
     }
 
-    @Operation(summary = "공모 참여 여부 조회")
+    @Operation(
+        summary = "공모 참여 여부 조회",
+        description = "사용자가 특정 공모에 참여했는지 여부를 조회합니다.\n\n입력값: fundingUuid (path)",
+        parameters = {
+            @io.swagger.v3.oas.annotations.Parameter(name = "X-Member-Uuid", description = "회원 UUID", in = io.swagger.v3.oas.annotations.enums.ParameterIn.HEADER, required = true),
+            @io.swagger.v3.oas.annotations.Parameter(name = "fundingUuid", description = "공모 UUID", in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH, required = true)
+        },
+        tags = {"Participation"}
+    )
     @GetMapping("/{fundingUuid}")
     public BaseResponseEntity<Boolean> getParticipateFunding(
             @RequestHeader(value = "X-Member-Uuid") String memberUuid,
@@ -58,7 +84,15 @@ public class ParticipationController {
                 .build()));
     }
 
-    @Operation(summary = "해당 공모 상품에서 구매한 조각 총합 조회")
+    @Operation(
+        summary = "공모 상품에서 구매한 조각 총합 조회",
+        description = "사용자가 해당 공모 상품에서 구매한 조각의 총합을 조회합니다.\n\n입력값: fundingUuid (path)",
+        parameters = {
+            @io.swagger.v3.oas.annotations.Parameter(name = "X-Member-Uuid", description = "회원 UUID", in = io.swagger.v3.oas.annotations.enums.ParameterIn.HEADER, required = true),
+            @io.swagger.v3.oas.annotations.Parameter(name = "fundingUuid", description = "공모 UUID", in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH, required = true)
+        },
+        tags = {"Participation"}
+    )
     @GetMapping("/total/{fundingUuid}")
     public BaseResponseEntity<Integer> getParticipateFundingTotal(
             @RequestHeader(value = "X-Member-Uuid") String memberUuid,
@@ -71,7 +105,14 @@ public class ParticipationController {
                         .build()));
     }
 
-    @Operation(summary = "남은 조각 수 조회")
+    @Operation(
+        summary = "남은 조각 수 조회",
+        description = "해당 공모 상품의 남은 조각 수를 조회합니다.\n\n입력값: fundingUuid (path)",
+        parameters = {
+            @io.swagger.v3.oas.annotations.Parameter(name = "fundingUuid", description = "공모 UUID", in = io.swagger.v3.oas.annotations.enums.ParameterIn.PATH, required = true)
+        },
+        tags = {"Participation"}
+    )
     @GetMapping("/remain/{fundingUuid}")
     public BaseResponseEntity<Integer> getRemainPieces(@PathVariable String fundingUuid){
         return new BaseResponseEntity<>(participationService.getRemainingPieces(fundingUuid));
