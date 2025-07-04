@@ -12,6 +12,7 @@ import com.pieceofcake.fundingservice.funding.infrastructure.client.BoardClient;
 import com.pieceofcake.fundingservice.funding.infrastructure.client.PieceClient;
 import com.pieceofcake.fundingservice.funding.infrastructure.client.dto.CreateBoardRequestDto;
 import com.pieceofcake.fundingservice.funding.infrastructure.client.dto.CreatePieceRequestDto;
+import com.pieceofcake.fundingservice.kafka.producer.AlertEvent;
 import com.pieceofcake.fundingservice.kafka.producer.FundingEvent;
 import com.pieceofcake.fundingservice.kafka.producer.FundingKafkaProducer;
 import com.pieceofcake.fundingservice.funding.infrastructure.repository.FundingRepository;
@@ -144,6 +145,11 @@ public class FundingServiceImpl implements FundingService {
         } else {
             throw new IllegalStateException("허용되지 않은 상태 변경: " + current + " → " + target);
         }
+        
+        if((current == FundingStatus.READY && target == FundingStatus.FUNDING)){
+            //신규 공모 이벤트 발행
+            openFundingAlertEvent(updateFundingStatusRequestDto.getFundingUuid());
+        }
 
         //조각 발행
         if(updateFundingStatusRequestDto.getFundingStatus() == FundingStatus.FUNDING){
@@ -227,6 +233,20 @@ public class FundingServiceImpl implements FundingService {
                         .fundingStatus(entity.getFundingStatus().toString())
                         .build();
                 fundingKafkaProducer.sendCreateFundingEvent(event);
+            }
+        });
+    }
+
+    private void openFundingAlertEvent(String fundingUuid){
+        //카프카 이벤트 발행
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                AlertEvent event = AlertEvent.builder()
+                        .Key(fundingUuid)
+                        .message("신규 공모가 생성되었습니다.")
+                        .build();
+                fundingKafkaProducer.sendOpenFundingAlertEvent(event);
             }
         });
     }

@@ -5,6 +5,7 @@ import com.pieceofcake.fundingservice.common.exception.BaseException;
 import com.pieceofcake.fundingservice.funding.infrastructure.client.PieceClient;
 import com.pieceofcake.fundingservice.funding.infrastructure.client.dto.DistributePieceRequestDto;
 import com.pieceofcake.fundingservice.funding.infrastructure.repository.FundingRepository;
+import com.pieceofcake.fundingservice.kafka.producer.AlertEvent;
 import com.pieceofcake.fundingservice.kafka.producer.FundingKafkaProducer;
 import com.pieceofcake.fundingservice.kafka.producer.FundingRemainPieceEvent;
 import com.pieceofcake.fundingservice.participation.dto.in.ParticipateFundingRequestDto;
@@ -81,7 +82,9 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
 
             //read 남은 조각 update 이벤트 발행
             createRemainPieceEvent(fundingJoinRequestDto.getFundingUuid());
+            updateRemainPieceEvent(fundingJoinRequestDto.getFundingUuid());
             log.info("남은조각 이벤트 발행 완료");
+
         }catch (Exception e){
             redisService.increaseRemainPieces(fundingJoinRequestDto.getFundingUuid(), fundingJoinRequestDto.getQuantity());
             throw new BaseException(BaseResponseStatus.INTERNAL_SERVER_ERROR,e);
@@ -111,7 +114,8 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
         try{
             //read 남은 조각 update 이벤트 발행
             createRemainPieceEvent(cancelDto.getFundingUuid());
-            log.info("조각 이벤트 발행 완료");
+            updateRemainPieceEvent(cancelDto.getFundingUuid());
+            log.info("남은조각 이벤트 발행 완료");
 
             //환불
             paymentClient.createMoney(CreatePaymentRequestDto.builder()
@@ -178,6 +182,19 @@ public class FundingParticipationServiceImpl implements FundingParticipationServ
                         .remainingPieces(getRemainingPieces(fundingUuid))
                         .build();
                 fundingKafkaProducer.sendFundingRemainPieceEvent(event);
+            }
+        });
+    }
+
+    private void updateRemainPieceEvent(String fundingUuid) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                AlertEvent event = AlertEvent.builder()
+                        .Key(fundingUuid)
+                        .message("공모의 남은 조각 개수가 변경되었습니다")
+                        .build();
+                fundingKafkaProducer.sendRemainPiecesAlertEvent(event);
             }
         });
     }
