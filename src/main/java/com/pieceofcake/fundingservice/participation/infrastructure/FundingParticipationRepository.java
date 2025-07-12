@@ -13,8 +13,8 @@ public interface FundingParticipationRepository extends JpaRepository<FundingPar
     //공모 상품의 참여 내역 전체 조회
     List<FundingParticipation> findByFundingUuidAndMemberUuidAndParticipateStatus(String fundingUuid, String memberUuid, ParticipateStatus participateStatus);
     @Query("SELECT " +
-            "SUM(CASE WHEN f.participateStatus = 'JOIN' THEN  f.quantity ELSE 0 END) - " +
-            "SUM(CASE WHEN f.participateStatus = 'CANCEL' THEN  f.quantity ELSE 0 END) " +
+            "COALESCE(SUM(CASE WHEN f.participateStatus = 'JOIN' THEN  f.quantity ELSE 0 END), 0) - " +
+            "COALESCE(SUM(CASE WHEN f.participateStatus = 'CANCEL' THEN  f.quantity ELSE 0 END), 0) " +
             "FROM FundingParticipation f " +
             "WHERE f.fundingUuid = :fundingUuid AND f.memberUuid = :memberUuid")
     int getJoinMinusCancelCount(@Param("fundingUuid") String fundingUuid,
